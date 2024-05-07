@@ -18,9 +18,11 @@ create table scrt (
   constraint UQ_scrt_usr_id_name unique(usr_id, name)
 );
 
+-- drop table scrt_attr;
+-- drop table attr;
 create table attr (
   id int primary key generated always as identity,
-  name varchar(255)
+  name varchar(255) unique
 );
 
 create table scrt_attr (

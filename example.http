@@ -22,7 +22,7 @@ Content-Type: application/json
 GET http://localhost:8080/secrets HTTP/1.1
 
 
-### Set secret
+### Set secret credential
 POST http://localhost:8080/secrets HTTP/1.1
 Content-Type: application/json
 
@@ -41,5 +41,58 @@ Content-Type: application/json
   }
 }
 
+
+### Set secret Text
+POST http://localhost:8080/secrets HTTP/1.1
+Content-Type: application/json
+
+{
+  "secret_name": "test secret",
+  "secret_meta": [
+    {
+      "attr": "site",
+      "value": "ya.ru"
+    }
+  ],
+  "secret_type": 1,
+  "text": "super important text must be encrypted"
+}
+
+### Set secret Text
+POST http://localhost:8080/secrets HTTP/1.1
+Content-Type: application/json
+
+{
+  "secret_name": "test secret",
+  "secret_meta": [
+    {
+      "attr": "site",
+      "value": "ya.ru"
+    }
+  ],
+  "secret_type": 2,
+  "binary": "d09ed187d0b5d0bdd18c20d181d0b5d0bad180d0b5d182d0bdd18bd0b920d182d0b5d0bad181d182"
+}
+### Set secret Bank Card
+POST http://localhost:8080/secrets HTTP/1.1
+Content-Type: application/json
+
+{
+  "secret_name": "test secret",
+  "secret_meta": [
+    {
+      "attr": "site",
+      "value": "ya.ru"
+    }
+  ],
+  "secret_type": 3,
+  "bank_card": {
+    "number": "460819298392383",
+    "holder": "John Doe",    
+    "valid": "04/25",
+    "validation_code": "123"    
+  }
+}
+
 ### Get secret
-GET  http://localhost:8080/secrets/6 HTTP/1.1
+GET  http://localhost:8080/secrets/32 HTTP/1.1

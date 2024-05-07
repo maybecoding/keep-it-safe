@@ -6,6 +6,6 @@ generate:
   strict-server: true
   models: false
 additional-imports:
-  - package: github.com/maybecoding/keep-it-safe/internal/adapters/api/v1/models
+  - package: github.com/maybecoding/keep-it-safe/internal/server/adapters/api/v1/models
     alias: .
 output: server.gen.go

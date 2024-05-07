@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/maybecoding/keep-it-safe/internal/app"
-	"github.com/maybecoding/keep-it-safe/internal/config"
+	"github.com/maybecoding/keep-it-safe/internal/server/app"
+	"github.com/maybecoding/keep-it-safe/internal/server/config"
 )
 
 func main() {

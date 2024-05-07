@@ -119,6 +119,8 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Bad request
         "401":
           description: Unauthorized
           content:
@@ -164,10 +166,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
         "500":
           description: Internal server error
           content:
@@ -258,7 +256,7 @@ components:
         - valid
         - holder
         - validation_code
-    SecretMeta:
+    SecretAttr:
       type: object
       properties:
         attr:
@@ -276,7 +274,7 @@ components:
         secret_meta:
           type: array
           items:
-            $ref: "#/components/schemas/SecretMeta"
+            $ref: "#/components/schemas/SecretAttr"
         secret_type:
           type: integer
           format: int32
@@ -290,7 +288,6 @@ components:
           $ref: "#/components/schemas/DataBankCard"
       required:
         - secret_name
-        - secret_meta
         - secret_type
   # securitySchemes:
   #   BearerAuth:
