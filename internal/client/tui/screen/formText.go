@@ -29,6 +29,7 @@ func NewFormText(state *state.State, name, placeholder string, modelBack *tea.Mo
 	input.Width = 20
 
 	ta := textarea.New()
+	ta.CharLimit = 10000
 	ta.Placeholder = placeholder
 
 	return &FormText{

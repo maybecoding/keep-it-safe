@@ -24,6 +24,7 @@ func Run(c *client.ClientWithResponses, height int, logPath string) error {
 	s.Login = new(tea.Model)
 	s.Secrets = new(tea.Model)
 	s.SecretChoose = new(tea.Model)
+	s.FormView = new(tea.Model)
 
 	s.SecretAdd.Credential = new(tea.Model)
 	s.SecretAdd.Text = new(tea.Model)
@@ -36,18 +37,13 @@ func Run(c *client.ClientWithResponses, height int, logPath string) error {
 			SecretTypes: []*tea.Model{s.SecretAdd.Credential, s.SecretAdd.Text, s.SecretAdd.Binary, s.SecretAdd.BankCard},
 		}
 	}
-	var secretViewInitCmd tea.Cmd = func() tea.Msg {
-		return screen.SecretChooseInit{
-			Back:        s.Secrets,
-			SecretTypes: []*tea.Model{nil, s.SecretAdd.Text, nil, nil},
-		}
-	}
 
 	*s.Welcome = screen.NewWelcome(s)
 	*s.Register = screen.NewRegister(s)
 	*s.Login = screen.NewLogin(s)
-	*s.Secrets = screen.NewSecrets(s, secretAddInitCmd, secretViewInitCmd)
+	*s.Secrets = screen.NewSecrets(s, secretAddInitCmd)
 	*s.SecretChoose = screen.NewSecretChoose(s)
+	*s.FormView = screen.NewFormView(s)
 
 	*s.SecretAdd.Credential = screen.NewForm(s,
 		"Add credentials",

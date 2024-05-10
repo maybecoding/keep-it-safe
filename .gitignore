@@ -24,6 +24,8 @@ go.work
 db/data
 
 .DS_Store
+golangci-lint
+
 # IDEs directories
 .idea
 .vscode

@@ -17,6 +17,7 @@ type State struct {
 	Secrets      *tea.Model
 	SecretChoose *tea.Model
 	SecretAdd    SecretTypes
+	FormView     *tea.Model
 }
 
 type SecretTypes struct {

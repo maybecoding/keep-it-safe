@@ -2,6 +2,7 @@ package screen
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -15,20 +16,20 @@ import (
 )
 
 type Secrets struct {
-	state       *state.State
-	list        list.Model
-	keys        *secretsKeyMap
-	addInitCmd  tea.Cmd
-	viewInitCmd tea.Cmd
+	state      *state.State
+	list       list.Model
+	keys       *secretsKeyMap
+	addInitCmd tea.Cmd
 }
 
 // additional buttons
 type secretsKeyMap struct {
-	reload  key.Binding
-	itemAdd key.Binding
+	reload   key.Binding
+	itemAdd  key.Binding
+	itemView key.Binding
 }
 
-func NewSecrets(state *state.State, addInitCmd tea.Cmd, viewInitCmd tea.Cmd) *Secrets {
+func NewSecrets(state *state.State, addInitCmd tea.Cmd) *Secrets {
 	s := &Secrets{state: state}
 	items := []list.Item{}
 
@@ -47,7 +48,6 @@ func NewSecrets(state *state.State, addInitCmd tea.Cmd, viewInitCmd tea.Cmd) *Se
 	s.keys = listKeys
 
 	s.addInitCmd = addInitCmd
-	s.viewInitCmd = viewInitCmd
 
 	return s
 }
@@ -61,6 +61,10 @@ func newListKeyMap() *secretsKeyMap {
 		itemAdd: key.NewBinding(
 			key.WithKeys("a"),
 			key.WithHelp("a", "add item"),
+		),
+		itemView: key.NewBinding(
+			key.WithKeys("v", "enter"),
+			key.WithHelp("v/enter", "view"),
 		),
 	}
 }
@@ -104,6 +108,14 @@ func (m *Secrets) Init() tea.Cmd {
 
 func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+
+	var secret *models.Secret
+	if i, ok := m.list.SelectedItem().(item); ok {
+		secret = &i.Secret
+	} else {
+		secret = nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.list.FilterState() == list.Filtering {
@@ -117,6 +129,8 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, m.Reload)
 		case key.Matches(msg, m.keys.itemAdd):
 			return *m.state.SecretChoose, m.addInitCmd
+		case key.Matches(msg, m.keys.itemView) && secret != nil:
+			cmds = append(cmds, m.ItemView(*secret))
 		}
 
 	case tea.WindowSizeMsg:
@@ -133,6 +147,8 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Println("add to cmd")
 			cmds = append(cmds, msg.Cmd)
 		}
+	case FormViewInit:
+		return *m.state.FormView, func() tea.Msg { return msg }
 
 	// if got data add secret
 	case models.Data:
@@ -221,6 +237,63 @@ func (m *Secrets) Add(d models.Data) tea.Cmd {
 			ar.Result = "Internal server error"
 		default:
 			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode)
+		}
+		log.Println("Reload result", ar.Result)
+		return ar
+	}
+}
+
+func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
+	log.Println("Start View")
+	return func() tea.Msg {
+		resp, err := m.state.C.SecretGetByIDWithResponse(context.Background(), secret.Id, &models.SecretGetByIDParams{Authorization: m.state.Token})
+		if err != nil {
+			return ActionResult{Result: err.Error()}
+		}
+		ar := ActionResult{}
+		switch resp.StatusCode() {
+		case 200:
+			if resp.JSON200 == nil {
+				ar.Result = "Failed to load response"
+			} else {
+				d := *resp.JSON200
+				ar.Result = "Successefully got secret"
+				ar.Success = true
+				ar.Cmd = func() tea.Msg {
+					viewInit := FormViewInit{Name: fmt.Sprintf(`Secret "%s"`, secret.Name), ModelBack: m.state.Secrets}
+					switch secret.Type {
+					case SecretTypeCredentials:
+						viewInit.Components = []FormViewComponent{{Name: "Login", Value: d.Credentials.Login}, {Name: "Password", Value: d.Credentials.Password}}
+						return viewInit
+					case SecretTypeBankCard:
+						viewInit.Components = []FormViewComponent{
+							{Name: "Number", Value: d.BankCard.Number},
+							{Name: "Holder", Value: d.BankCard.Holder},
+							{Name: "Valid", Value: d.BankCard.Valid},
+							{Name: "ValidationCode", Value: d.BankCard.ValidationCode},
+						}
+						return viewInit
+					case SecretTypeText:
+						viewInit.TextName = "Text"
+						viewInit.Text = *d.Text
+						return viewInit
+					case SecretTypeBinary:
+						viewInit.TextName = "Binary Hex"
+						b := *d.Binary
+						viewInit.Text = hex.EncodeToString(b)
+						return viewInit
+					}
+					return nil
+				}
+			}
+		case 401:
+			ar.Result = "User unautorized"
+		case 404:
+			ar.Result = "Not found"
+		case 500:
+			ar.Result = "Internal server error"
+		default:
+			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode())
 		}
 		log.Println("Reload result", ar.Result)
 		return ar
