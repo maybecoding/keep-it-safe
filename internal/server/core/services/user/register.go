@@ -13,7 +13,7 @@ import (
 //  1. Проверяем что имя пользователя доступно для добавления
 //  2. Хэшируем пароль
 //  3. Сохраняем пользователя
-//  4. Формируем jwt-токен
+//  4. Формируем jwt-токен.
 func (s *Service) Register(ctx context.Context, login entity.UserLogin, password entity.UserPassword) (entity.Token, error) {
 	// 1. Проверяем что имя пользователя доступно для добавления
 	loginAvail, err := s.store.LoginAvailable(ctx, login)

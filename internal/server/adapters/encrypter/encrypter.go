@@ -9,12 +9,12 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/config"
 )
 
-// Encrypter - struct for encrypt and decrypt
+// Encrypter - struct for encrypt and decrypt.
 type Encrypter struct {
-	cfg config.Encryption
-
 	masterKey []byte
 	encrKey   *rotator.Rotator
+
+	cfg config.Encryption
 }
 
 func New(cfg config.Encryption) *Encrypter {
@@ -32,7 +32,8 @@ func encryptFix(key []byte, src []byte) ([]byte, error) {
 	src = append(src, make([]byte, aes.BlockSize*blockCnt-srcLen)...)
 
 	dst := make([]byte, blockCnt*aes.BlockSize) // зашифровываем
-	for i := 0; i < blockCnt; i += 1 {
+	// for i := 0; i < blockCnt; i++ {
+	for i := range blockCnt {
 		currSrc := src[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		currDst := dst[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		aesblock.Encrypt(currDst, currSrc)
@@ -52,7 +53,7 @@ func decryptFix(key []byte, src []byte) ([]byte, error) {
 	srcLen := len(src)
 
 	dst := make([]byte, srcLen)
-	for i := 0; i < srcLen/aes.BlockSize; i += 1 {
+	for i := 0; i < srcLen/aes.BlockSize; i++ {
 		currSrc := src[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		currDst := dst[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		aesblock.Decrypt(currDst, currSrc)

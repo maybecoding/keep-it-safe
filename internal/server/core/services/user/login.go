@@ -1,3 +1,4 @@
+// Package secret - service for users.
 package user
 
 import (
@@ -12,7 +13,7 @@ import (
 // Login - Аутентификация пользователя
 // 1. Получаем по логину UserID и Hash из БД
 // 2. Проверяем Хэш
-// 3. Формируем jwt-токен
+// 3. Формируем jwt-токен.
 func (s *Service) Login(ctx context.Context, login entity.UserLogin, password entity.UserPassword) (entity.Token, error) {
 	// 1. Получаем по логину UserID и Hash из БД
 	user, err := s.store.UserGet(ctx, login)

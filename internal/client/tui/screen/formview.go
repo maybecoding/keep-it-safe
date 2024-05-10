@@ -10,15 +10,17 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 )
 
+// FormView - struct for readonly form.
 type FormView struct {
 	state        *state.State
 	d            *FormViewInit
-	viewport     viewport.Model
 	vpTitleStyle func(strs ...string) string
 	vpInfoStyle  func(strs ...string) string
+	viewport     viewport.Model
 }
 
-func NewFormView(state *state.State) *FormView {
+// NewFormView returns new form view.
+func NewFormView(st *state.State) *FormView {
 	// titleStyle
 	b := lipgloss.RoundedBorder()
 	b.Right = "├"
@@ -29,33 +31,36 @@ func NewFormView(state *state.State) *FormView {
 	bb.Left = "┤"
 	infoStyle := titleStyle.Copy().BorderStyle(bb)
 
-	m := &FormView{state: state, vpTitleStyle: titleStyle.Render, vpInfoStyle: infoStyle.Render}
-	m.viewport = viewport.New(state.F.Width(), 0)
+	m := &FormView{state: st, vpTitleStyle: titleStyle.Render, vpInfoStyle: infoStyle.Render}
+	m.viewport = viewport.New(st.F.Width(), 0)
 	m.viewport.HighPerformanceRendering = false
 
 	return m
 }
 
+// FormViewInit struct with initialization for screen FormView.
 type FormViewInit struct {
 	Name       string
-	Components []FormViewComponent
 	ModelBack  *tea.Model
 	TextName   string
 	Text       string
+	Components []FormViewComponent
 }
 
+// FormViewComponent settings for input component.
 type FormViewComponent struct {
 	Name, Value string
 }
 
-type FormViewFields []string
-
+// type FormViewFields []string.
 var _ tea.Model = (*FormView)(nil)
 
+// Init TUI model.
 func (m *FormView) Init() tea.Cmd {
 	return nil
 }
 
+// Update TUI model.
 func (m *FormView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -69,7 +74,7 @@ func (m *FormView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case s == "ctrl+c" || s == "q" || s == "esc":
 			return m, tea.Quit
 
-		case s == "left" && m.d != nil:
+		case s == tea.KeyLeft.String() && m.d != nil:
 			return *m.d.ModelBack, nil
 		}
 
@@ -88,6 +93,7 @@ func (m *FormView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *FormView) View() string {
 	if m.d == nil {
 		return m.state.F.Render("Component not initialized", "ctrl+c quit")

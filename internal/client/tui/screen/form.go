@@ -1,3 +1,4 @@
+// Package screen containing of TUI screens.
 package screen
 
 import (
@@ -7,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Form screen for form fields.
 type Form struct {
 	name        string
 	modelBack   *tea.Model
@@ -18,7 +20,14 @@ type Form struct {
 	focusIndex int
 }
 
-func NewForm(state *state.State, name string, modelBack *tea.Model, modelSubmit *tea.Model, ips []InputParam, callback func([]string) tea.Cmd) *Form {
+// NewForm creates form with fields.
+func NewForm(st *state.State,
+	name string,
+	modelBack *tea.Model,
+	modelSubmit *tea.Model,
+	ips []InputParam,
+	callback func([]string) tea.Cmd,
+) *Form {
 	// prepare inputs
 	inputs := make([]textinput.Model, 0, len(ips))
 	for i, ip := range ips {
@@ -36,7 +45,7 @@ func NewForm(state *state.State, name string, modelBack *tea.Model, modelSubmit 
 		inputs = append(inputs, ti)
 	}
 
-	return &Form{state: state, name: name, inputs: inputs, callback: callback, modelBack: modelBack, modelSubmit: modelSubmit}
+	return &Form{state: st, name: name, inputs: inputs, callback: callback, modelBack: modelBack, modelSubmit: modelSubmit}
 }
 
 type InputParam struct {
@@ -48,19 +57,21 @@ type FormFields []string
 
 var _ tea.Model = (*Form)(nil)
 
+// Init TUI model.
 func (m *Form) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update TUI model.
 func (m *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case s == "left":
+		case s == tea.KeyLeft.String():
 			return *m.modelBack, nil
 
-		case s == "ctrl+c" || s == "esc": // key.Matches(msg, m.keys.Quit):
+		case s == "ctrl+c" || s == "esc":
 			return m, tea.Quit
 
 			// Set focus to next input
@@ -125,6 +136,7 @@ func (m *Form) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *Form) View() string {
 	view := `╭────────────────────────────────────╮
 ` + m.state.F.SingleHeader(m.name) + `
@@ -143,6 +155,7 @@ func (m *Form) View() string {
 	return m.state.F.Render(view, "ctrl+c quit • ← back")
 }
 
+// Fields returns form fields as tea.msg.
 func (m *Form) Fields() tea.Msg {
 	ff := make(FormFields, 0, len(m.inputs))
 	for _, input := range m.inputs {
@@ -151,6 +164,7 @@ func (m *Form) Fields() tea.Msg {
 	return ff
 }
 
+// FieldsStr returns form ffields as string slice.
 func (m *Form) FieldsStr() []string {
 	ff := make([]string, 0, len(m.inputs))
 	for _, input := range m.inputs {

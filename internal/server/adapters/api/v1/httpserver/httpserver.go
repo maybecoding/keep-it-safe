@@ -9,6 +9,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/config"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/secret"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/user"
+	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
 	middleware "github.com/oapi-codegen/nethttp-middleware"
 )
@@ -26,6 +27,7 @@ func New(cfg *config.HTTP, u *user.Service, s *secret.Service) *Server {
 }
 
 func (s *Server) Run(_ context.Context) error {
+	logger.Info().Msg("Starting HTTP server")
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return fmt.Errorf("http - New - api.GetSwagger: %w", err)
@@ -43,5 +45,6 @@ func (s *Server) Run(_ context.Context) error {
 }
 
 func (s *Server) Shutdown(_ context.Context) error {
+	logger.Info().Msg("Stopping HTTP server")
 	return fmt.Errorf("http - Shutdown - server.Shutdown:%w", s.server.Shutdown(context.Background()))
 }

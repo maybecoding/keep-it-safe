@@ -1,3 +1,4 @@
+// Package frame used for frame utils TUI application.
 package frame
 
 import (
@@ -7,26 +8,31 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Frame struct with frame configuration.
 type Frame struct {
-	winHeight, winWidth int
 	margin              *lipgloss.Style
+	winHeight, winWidth int
 }
 
+// New creates new frame.
 func New() *Frame {
 	return &Frame{}
 }
 
+// MarginSet set margins for TUI application.
 func (f *Frame) MarginSet(i ...int) *Frame {
 	m := lipgloss.NewStyle().Margin(i...)
 	f.margin = &m
 	return f
 }
 
+// WinSize sets windows size using object tea.WindowSizeMsg. When window size changes usualy creates object tea.WindowSizeMsg.
 func (f *Frame) WinSize(msg tea.WindowSizeMsg) {
 	f.winHeight = msg.Height
 	f.winWidth = msg.Width
 }
 
+// FreeSpace - according to passed arguments and window height returns free space.
 func (f *Frame) FreeSpace(top, bottom string) int {
 	var v int
 	if f.margin != nil {
@@ -35,6 +41,7 @@ func (f *Frame) FreeSpace(top, bottom string) int {
 	return f.winHeight - strings.Count(top, "\n") - strings.Count(bottom, "\n") - 1 - v
 }
 
+// Render - according to window size and margins renders UI.
 func (f *Frame) Render(top, bottom string) string {
 	freeSpace := f.FreeSpace(top, bottom)
 
@@ -50,22 +57,27 @@ func (f *Frame) Render(top, bottom string) string {
 	return result
 }
 
+// Width of window without margins.
 func (f *Frame) Width() int {
 	return f.winWidth - f.H()
 }
 
+// Height of window without margins.
 func (f *Frame) Height() int {
 	return f.winHeight - f.V()
 }
 
+// WidthFull - width of window.
 func (f *Frame) WidthFull() int {
 	return f.winWidth
 }
 
+// HeightFull - height of window.
 func (f *Frame) HeightFull() int {
 	return f.winHeight
 }
 
+// V - vertial margin.
 func (f *Frame) V() int {
 	if f.margin == nil {
 		return 0
@@ -74,6 +86,7 @@ func (f *Frame) V() int {
 	return v
 }
 
+// H - horisontal margin.
 func (f *Frame) H() int {
 	if f.margin == nil {
 		return 0
@@ -82,6 +95,7 @@ func (f *Frame) H() int {
 	return v
 }
 
+// SingleHeader - draws text inside frame.
 func (f *Frame) SingleHeader(header string) string {
 	padding := "    "
 	wrapL := 38 - 2 - len(padding) - len(header)

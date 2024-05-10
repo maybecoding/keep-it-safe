@@ -7,20 +7,24 @@ import (
 	"github.com/maybecoding/keep-it-safe/pkg/vscfg"
 )
 
+// Config - Struct with app configuration.
 type Config struct {
 	Server
-	TUI
+	Log
 }
 
 type (
+	// Server configuration.
 	Server struct {
 		Address string `default:"http://localhost:8080" flg:"s" flgU:"Endpoint HTTP-server address" env:"SERVER_ADDRESS"`
 	}
-	TUI struct {
-		WindowHeight int `default:"25" flg:"wh" flgU:"TUI interface window height" env:"WINDOW_HEIGHT"`
+	// Log - logger configuration.
+	Log struct {
+		Level string `default:"" flg:"log" flgU:"Log level" env:"LOG_LEVEL"`
 	}
 )
 
+// New creates new log struct and fill it according to tags using vscfg lib.
 func New() (*Config, error) {
 	cfg := new(Config)
 	rCfg := reflect.ValueOf(cfg).Elem()

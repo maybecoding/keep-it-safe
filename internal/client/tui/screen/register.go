@@ -3,6 +3,7 @@ package screen
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
@@ -19,31 +20,32 @@ type registerKeyMap struct {
 	Quit key.Binding
 }
 
-func (k registerKeyMap) ShortHelp() []key.Binding {
+func (k *registerKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Back, k.Quit}
 }
 
-func (k registerKeyMap) FullHelp() [][]key.Binding {
+func (k *registerKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{{k.Back}, {k.Quit}}
 }
 
+// Register struct for registration form.
 type Register struct {
 	state *state.State
-	keys  registerKeyMap
+	keys  *registerKeyMap
 	help  help.Model
-
-	inputs     []textinput.Model
-	focusIndex int
 
 	buttonFocused string
 	buttonBlurred string
 	errorMessage  string
+	inputs        []textinput.Model
+	focusIndex    int
 }
 
-func NewRegister(state *state.State) *Register {
+// NewRegister returns registration form.
+func NewRegister(st *state.State) *Register {
 	keyMap := registerKeyMap{
 		Back: key.NewBinding(
-			key.WithKeys("left"),
+			key.WithKeys(tea.KeyLeft.String()),
 			key.WithHelp("←", "back"),
 		),
 		Quit: key.NewBinding(
@@ -51,10 +53,11 @@ func NewRegister(state *state.State) *Register {
 			key.WithHelp("esc", "quit"),
 		),
 	}
-	help := help.New()
+	hlp := help.New()
 
 	// prepare inputs
-	inputs := make([]textinput.Model, 2)
+	const inputCount = 2
+	inputs := make([]textinput.Model, inputCount)
 	var t textinput.Model
 	for i := range inputs {
 		t = textinput.New()
@@ -77,7 +80,7 @@ func NewRegister(state *state.State) *Register {
 
 	buttonFocused := focusedStyle.Copy().Render("[ Submit ]")
 	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	return &Register{state: state, keys: keyMap, help: help, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
+	return &Register{state: st, keys: &keyMap, help: hlp, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
 }
 
 var _ tea.Model = (*Register)(nil)
@@ -161,6 +164,7 @@ func (m *Register) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *Register) View() string {
 	view := `
 ╭────────────────────────────────────╮
@@ -194,7 +198,7 @@ func (m Register) Register() tea.Msg {
 
 	ar := ActionResult{}
 	switch resp.StatusCode() {
-	case 200:
+	case http.StatusOK:
 		if resp != nil && resp.HTTPResponse != nil {
 			auth := strings.Split(resp.HTTPResponse.Header.Get("Set-Cookie"), "=")
 			if len(auth) > 1 && auth[0] != "" {
@@ -203,12 +207,12 @@ func (m Register) Register() tea.Msg {
 				ar.Result = "Failed to get authorization token"
 			}
 		}
-	case 400:
+	case http.StatusBadRequest:
 		ar.Result = "Bad request"
-	case 409:
+	case http.StatusConflict:
 		ar.Result = "User already exists"
-	case 500:
-		ar.Result = "Internal server error"
+	case http.StatusInternalServerError:
+		ar.Result = "Internal server Error"
 	}
 	return ar
 }

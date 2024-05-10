@@ -1,6 +1,7 @@
 DB_URL := "postgres://api:pwd@172.17.0.2:5432/mart?sslmode=disable"
 
 .PHONY: all
+
 all: ;
 
 .PHONY: pg
@@ -58,3 +59,27 @@ mg-down:
 	  -path=/migrations \
 	  -database $(DB_URL) \
 	  down -all
+	cat ./golangci-lint/report-unformatted.json | jq > ./golangci-lint/report.json
+	rm ./golangci-lint/report-unformatted.json
+
+.PHONY: lintl
+lintl:
+	golangci-lint -c .golangci.yml run ./...  > ./golangci-lint/report-unformatted.json
+	cat ./golangci-lint/report-unformatted.json | jq > ./golangci-lint/report.json
+	rm ./golangci-lint/report-unformatted.json
+
+
+.PHONY: build $(PLATFORMS)
+
+PLATFORMS := windows linux darwin
+ARCHITECTURES := amd64 386
+
+build: $(PLATFORMS)
+
+$(PLATFORMS):
+	@echo "Building for $@"
+	@$(foreach arch, $(ARCHITECTURES), \
+	GOOS=$@ GOARCH=$(arch) go build -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildTime=$$(date +'%Y/%m/%d %H:%M:%S')'" -o 'bin/keep-it-safe-$@-$(arch)' ./cmd/client; \
+	)
+
+

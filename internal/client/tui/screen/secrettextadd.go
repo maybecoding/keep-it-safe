@@ -17,7 +17,8 @@ type SecretAddText struct {
 	focusIndex int
 }
 
-func NewSecretAddText(state *state.State) *SecretAddText {
+// NewSecretAddText creates screen for input long text
+func NewSecretAddText(st *state.State) *SecretAddText {
 	name := textinput.New()
 	name.Placeholder = "Name"
 	name.Focus()
@@ -29,11 +30,12 @@ func NewSecretAddText(state *state.State) *SecretAddText {
 
 	return &SecretAddText{
 		name:     name,
-		state:    state,
+		state:    st,
 		textarea: ti,
 	}
 }
 
+// Init TUI model.
 func (m *SecretAddText) Init() tea.Cmd {
 	setTableSize := func() tea.Msg { return tea.WindowSizeMsg{Width: m.state.F.WidthFull(), Height: m.state.F.HeightFull()} }
 	m.name.SetValue("")
@@ -42,6 +44,7 @@ func (m *SecretAddText) Init() tea.Cmd {
 	return tea.Batch(textarea.Blink, setTableSize)
 }
 
+// Update TUI model.
 func (m *SecretAddText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -91,6 +94,7 @@ func (m *SecretAddText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *SecretAddText) View() string {
 	view := ""
 	submit := "Submit"
@@ -101,18 +105,24 @@ func (m *SecretAddText) View() string {
 	return m.state.F.Render(fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", view, m.name.View(), m.textarea.View(), submit), "(ctrl+c to quit)")
 }
 
+// FocusName is name focused.
 func (m *SecretAddText) FocusName() bool {
 	return m.focusIndex == 0
 }
 
+// FocusText is text focused.
 func (m *SecretAddText) FocusText() bool {
 	return m.focusIndex == 1
 }
 
+// FocusSubmit - is submit button focused.
 func (m *SecretAddText) FocusSubmit() bool {
-	return m.focusIndex == 2
+	const submitNumber = 2
+	return m.focusIndex == submitNumber
 }
 
+// FocusNext - moves focus to next element.
 func (m *SecretAddText) FocusNext() {
-	m.focusIndex = (m.focusIndex + 1) % 3
+	const elemCnt = 3
+	m.focusIndex = (m.focusIndex + 1) % elemCnt
 }

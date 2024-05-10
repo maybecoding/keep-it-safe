@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/maybecoding/keep-it-safe/internal/server/adapters/api/v1/models"
@@ -17,7 +16,7 @@ func (a *API) getUserID(authCookie string) (entity.UserID, *models.Error) {
 
 	tokenData, err := a.user.ValidateToken(token)
 	if err != nil {
-		return 0, &models.Error{Error: fmt.Sprintf("token invalid: %s", err.Error())}
+		return 0, &models.Error{Error: "token invalid:" + err.Error()}
 	}
 	return tokenData.UserID, nil
 }

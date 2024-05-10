@@ -9,6 +9,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// SecretList returns secret list.
 func (s *Store) SecretList(ctx context.Context, userID entity.UserID) ([]entity.Secret, error) {
 	secrets, err := pgxutil.Select(ctx,
 		s.pg.Pool(ctx),

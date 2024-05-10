@@ -1,3 +1,4 @@
+// Package postgres helps to connect to postgres and provide transaction helpers.
 package postgres
 
 import (
@@ -11,7 +12,7 @@ type Postgres struct {
 	pool *pgxpool.Pool
 }
 
-// New - Подключение к БД создание пула соединений
+// New - Подключение к БД создание пула соединений.
 func New(uri string) (*Postgres, error) {
 	pg := &Postgres{}
 	ctx := context.Background()
@@ -27,7 +28,7 @@ func New(uri string) (*Postgres, error) {
 	return pg, nil
 }
 
-// Close - Закрытие соединения
+// Close - Закрытие соединения.
 func (pg *Postgres) Close() {
 	if pg.pool != nil {
 		pg.pool.Close()

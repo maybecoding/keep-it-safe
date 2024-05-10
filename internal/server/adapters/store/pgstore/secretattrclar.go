@@ -7,6 +7,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// SecretAttrClear clears secret metadata.
 func (s *Store) SecretAttrClear(ctx context.Context, secretID entity.SecretID) error {
 	_, err := s.pg.Pool(ctx).Exec(ctx, attrClearQuery, secretID)
 	if err != nil {

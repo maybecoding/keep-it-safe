@@ -3,22 +3,19 @@ package tui
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 
 	frame "github.com/maybecoding/keep-it-safe/internal/client/tui/render"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/screen"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
+	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
 	tea "github.com/charmbracelet/bubbletea"
 	client "github.com/maybecoding/keep-it-safe/internal/client/api/v1"
 	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
 )
 
-func Run(c *client.ClientWithResponses, height int, logPath string) error {
+func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {
 	s := &state.State{C: c, F: frame.New().MarginSet(1, 2)}
-
-	tea.LogToFile(logPath, "tea")
-
 	s.Welcome = new(tea.Model)
 	s.Register = new(tea.Model)
 	s.Login = new(tea.Model)
@@ -38,7 +35,7 @@ func Run(c *client.ClientWithResponses, height int, logPath string) error {
 		}
 	}
 
-	*s.Welcome = screen.NewWelcome(s)
+	*s.Welcome = screen.NewWelcome(s, buildVersion, buildTime)
 	*s.Register = screen.NewRegister(s)
 	*s.Login = screen.NewLogin(s)
 	*s.Secrets = screen.NewSecrets(s, secretAddInitCmd)
@@ -70,9 +67,9 @@ func Run(c *client.ClientWithResponses, height int, logPath string) error {
 		s.Secrets,
 		func(s []string) tea.Cmd {
 			hexBytes, err := hex.DecodeString(s[1])
-			log.Println(hexBytes)
+			logger.Debug().Bytes("tui - Run - Add Binary Data - Bytes", hexBytes)
 			if err != nil {
-				panic(err)
+				logger.Error().Err(err).Msg("tui - Run - Add Binary Data")
 			}
 			return screen.DataCmd(models.Data{
 				SecretName: s[0],

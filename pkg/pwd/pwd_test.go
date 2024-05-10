@@ -39,7 +39,7 @@ func TestPwd(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEqual(t, gotHash, []byte{})
 
-				got := Check([]byte(tt.args.pwdCheck), []byte(gotHash))
+				got := Check([]byte(tt.args.pwdCheck), gotHash)
 				require.Equal(t, got, tt.want.ok)
 			} else {
 				require.Error(t, err, "Must be error")

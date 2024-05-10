@@ -1,3 +1,4 @@
+// Package secret - service for secrets.
 package secret
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
-// GetByID - get secret of user by id
+// GetByID - get secret of user by id.
 func (s *Service) GetByID(ctx context.Context, userID entity.UserID, secretID entity.SecretID) (*entity.Data, error) {
 	// get secret from DB
 	scrDet, err := s.store.SecretGet(ctx, secretID)

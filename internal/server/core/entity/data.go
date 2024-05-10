@@ -1,18 +1,19 @@
+// Package entity stores main entities of server app.
 package entity
 
-// DataCredentials stores login and password
+// DataCredentials stores login and password.
 type DataCredentials struct {
 	Login    string
 	Password string
 }
 
-// DataText stores text
+// DataText stores text.
 type DataText string
 
-// DataCredentials stores bytes
+// DataBinary stores bytes.
 type DataBinary []byte
 
-// DataCredentials stores bank card data
+// DataBankCard stores bank card data.
 type DataBankCard struct {
 	Number         string
 	Valid          string
@@ -20,7 +21,7 @@ type DataBankCard struct {
 	ValidationCode string
 }
 
-// Data stores secret with data of SecretType
+// Data stores secret with data of SecretType.
 type Data struct {
 	SecretName SecretName
 	SecretMeta SecretMeta

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// Encrypt data and returns encrypted data, nonce, encrypted encription key and error if it ocured
+// Encrypt data and returns encrypted data, nonce, encrypted encription key and error if it ocured.
 func (e *Encrypter) Encrypt(src []byte) (dst []byte, nonce []byte, keyEncr []byte, err error) {
 	// Get rotated encryption keys
 	encrKey, encrKeyEncrypted, err := e.encrKey.Keys()

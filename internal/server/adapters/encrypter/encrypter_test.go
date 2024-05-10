@@ -7,7 +7,8 @@ import (
 )
 
 func TestEncryptDecryptFix(t *testing.T) {
-	for i := 0; i < 10; i += 1 {
+	// for i := 0; i < 10; i++ {
+	for i := range 10 {
 		for _, size := range []int{16, 24, 32} {
 			key, err := rndGen(size)
 			require.NoError(t, err)

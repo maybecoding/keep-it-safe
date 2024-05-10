@@ -9,6 +9,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// Set saves secret data.
 func (s *Service) Set(ctx context.Context, userID entity.UserID, data entity.Data) (entity.SecretID, error) {
 	// convert data to bytes
 	buf := bytes.NewBuffer(nil)
@@ -50,7 +51,7 @@ func (s *Service) Set(ctx context.Context, userID entity.UserID, data entity.Dat
 		EncryptionSK: keyEncr,
 		Meta:         data.SecretMeta,
 	}
-	// TODO
+
 	var secretID entity.SecretID
 	err = s.store.WithTx(ctx, func(ctx context.Context) error {
 		var err error

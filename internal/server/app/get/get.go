@@ -1,3 +1,4 @@
+// Package get used for creating main struts with automating dependencies.
 package get
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/pkg/postgres"
 )
 
+// Get struct with main structs.
 type Get struct {
 	cfg  *config.Config
 	pg   *postgres.Postgres
@@ -23,10 +25,12 @@ type Get struct {
 	server  *httpserver.Server
 }
 
+// New creates new Get struct.
 func New(cfg *config.Config, pg *postgres.Postgres, encr *encrypter.Encrypter) *Get {
 	return &Get{cfg: cfg, pg: pg, encr: encr}
 }
 
+// PGStore returns store.
 func (g *Get) PGStore() *pgstore.Store {
 	if g.pgStore == nil {
 		g.pgStore = pgstore.New(g.pg)
@@ -34,6 +38,7 @@ func (g *Get) PGStore() *pgstore.Store {
 	return g.pgStore
 }
 
+// UsrSrv returns user service.
 func (g *Get) UsrSrv() *user.Service {
 	if g.usrSrv == nil {
 		encode, decode := jwt.Init[entity.Token, entity.TokenData](g.cfg.JWT.Secret, g.cfg.JWT.ExpiresHours)
@@ -42,6 +47,7 @@ func (g *Get) UsrSrv() *user.Service {
 	return g.usrSrv
 }
 
+// ScrtSrv returns secret service.
 func (g *Get) ScrtSrv() *secret.Service {
 	if g.scrtSrv == nil {
 		g.scrtSrv = secret.New(g.PGStore(), g.encr)
@@ -49,6 +55,7 @@ func (g *Get) ScrtSrv() *secret.Service {
 	return g.scrtSrv
 }
 
+// Server returns http server.
 func (g *Get) Server() *httpserver.Server {
 	if g.server == nil {
 		g.server = httpserver.New(&g.cfg.HTTP, g.UsrSrv(), g.ScrtSrv())

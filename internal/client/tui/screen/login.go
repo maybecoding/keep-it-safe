@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
+	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -20,14 +22,17 @@ type loginKeyMap struct {
 	Quit key.Binding
 }
 
+// ShortHelp returns short help for help component.
 func (k loginKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Back, k.Quit}
 }
 
+// FullHelp returns short help for help component.
 func (k loginKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{{k.Back}, {k.Quit}}
 }
 
+// Login struct for login form.
 type Login struct {
 	state *state.State
 	keys  loginKeyMap
@@ -41,10 +46,11 @@ type Login struct {
 	errorMessage  string
 }
 
+// NewLogin returns new login form.
 func NewLogin(state *state.State) *Login {
 	keyMap := loginKeyMap{
 		Back: key.NewBinding(
-			key.WithKeys("left"),
+			key.WithKeys(tea.KeyLeft.String()),
 			key.WithHelp("←", "back"),
 		),
 		Quit: key.NewBinding(
@@ -52,7 +58,7 @@ func NewLogin(state *state.State) *Login {
 			key.WithHelp("esc", "quit"),
 		),
 	}
-	help := help.New()
+	hlp := help.New()
 
 	// prepare inputs
 	inputs := make([]textinput.Model, 2)
@@ -78,15 +84,17 @@ func NewLogin(state *state.State) *Login {
 
 	buttonFocused := focusedStyle.Copy().Render("[ Submit ]")
 	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	return &Login{state: state, keys: keyMap, help: help, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
+	return &Login{state: state, keys: keyMap, help: hlp, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
 }
 
 var _ tea.Model = (*Login)(nil)
 
+// Init TUI model.
 func (m *Login) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update TUI model.
 func (m *Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -162,6 +170,7 @@ func (m *Login) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *Login) View() string {
 	view := `
 ╭────────────────────────────────────╮
@@ -180,6 +189,7 @@ func (m *Login) View() string {
 	} else {
 		view += "\n\n" + m.buttonBlurred + "\n\n"
 	}
+
 	if m.errorMessage != "" {
 		view += errorStyle.Copy().Render(m.errorMessage) + "\n"
 	}
@@ -187,31 +197,36 @@ func (m *Login) View() string {
 	return m.state.F.Render(view, m.help.View(m.keys))
 }
 
-func (m Login) Login() tea.Msg {
-	resp, err := m.state.C.LoginWithResponse(context.Background(), models.Credential{Login: m.inputs[0].Value(), Password: m.inputs[1].Value()})
+// Login login on server.
+func (m *Login) Login() tea.Msg {
+	resp, err := m.state.C.LoginWithResponse(context.Background(),
+		models.Credential{
+			Login:    m.inputs[0].Value(),
+			Password: m.inputs[1].Value(),
+		})
 	if err != nil {
 		return ActionResult{Result: err.Error()}
 	}
 
 	ar := ActionResult{}
 	switch resp.StatusCode() {
-	case 200:
+	case http.StatusOK:
 		if resp != nil && resp.HTTPResponse != nil {
 			auth := strings.Split(resp.HTTPResponse.Header.Get("Set-Cookie"), "=")
 			if len(auth) > 1 && auth[0] != "" {
 				m.state.Token = strings.ReplaceAll(auth[1], "\"", "")
-				log.Println("set token", m.state.Token)
+				logger.Debug().Str("token", m.state.Token).Msg("set token")
 			} else {
 				log.Println("Failed to get authorization token", m.state.Token)
 				ar.Result = "Failed to get authorization token"
 			}
 		}
-	case 400:
+	case http.StatusBadRequest:
 		ar.Result = "Bad request"
-	case 401:
+	case http.StatusUnauthorized:
 		ar.Result = "Login or password are incorrect"
-	case 500:
-		ar.Result = "Internal server error"
+	case http.StatusInternalServerError:
+		ar.Result = "Internal Server error"
 	}
 	return ar
 }

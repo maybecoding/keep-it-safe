@@ -7,7 +7,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/adapters/encrypter/rotator"
 )
 
-// Init - initialize Encrypter
+// Init - initialize Encrypter.
 func (e *Encrypter) Init() error {
 	// Check encryption key size
 	switch e.cfg.KeySize {

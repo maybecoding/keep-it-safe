@@ -14,12 +14,12 @@ func main() {
 		return
 	}
 
-	app := app.New(cfg)
-	err = app.Init()
+	a := app.New(cfg)
+	err = a.Init()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	app.Run()
+	a.Run()
 }

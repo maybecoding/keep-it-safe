@@ -14,29 +14,29 @@ type secretChooseKeyMap struct {
 	Quit key.Binding
 }
 
-func (k secretChooseKeyMap) ShortHelp() []key.Binding {
+func (k *secretChooseKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Back, k.Quit}
 }
 
-func (k secretChooseKeyMap) FullHelp() [][]key.Binding {
+func (k *secretChooseKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{{k.Back}, {k.Quit}}
 }
 
 type SecretChoose struct {
 	state *state.State
-	keys  secretChooseKeyMap
+	keys  *secretChooseKeyMap
 	help  help.Model
 
+	modelBack        *tea.Model
+	modelsSecretType []*tea.Model
 	secretTypesLen   int
 	focusIndex       int
-	modelsSecretType []*tea.Model
-	modelBack        *tea.Model
 }
 
-func NewSecretChoose(state *state.State) *SecretChoose {
+func NewSecretChoose(st *state.State) *SecretChoose {
 	keyMap := secretChooseKeyMap{
 		Back: key.NewBinding(
-			key.WithKeys("left"),
+			key.WithKeys(tea.KeyLeft.String()),
 			key.WithHelp("←", "back"),
 		),
 		Quit: key.NewBinding(
@@ -44,17 +44,19 @@ func NewSecretChoose(state *state.State) *SecretChoose {
 			key.WithHelp("esc/q", "quit"),
 		),
 	}
-	help := help.New()
-
-	return &SecretChoose{state: state, keys: keyMap, help: help, secretTypesLen: 4}
+	hlp := help.New()
+	const secretTypesCnt = 4
+	return &SecretChoose{state: st, keys: &keyMap, help: hlp, secretTypesLen: secretTypesCnt}
 }
 
 var _ tea.Model = (*SecretChoose)(nil)
 
+// Init TUI model.
 func (m *SecretChoose) Init() tea.Cmd {
 	return textinput.Blink
 }
 
+// Update TUI model.
 func (m *SecretChoose) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case SecretChooseInit:
@@ -70,7 +72,7 @@ func (m *SecretChoose) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		// if back
-		case s == "left":
+		case s == tea.KeyLeft.String():
 			return *m.modelBack, nil
 		// if choosed secret type
 		case s == "enter":
@@ -99,6 +101,7 @@ func (m *SecretChoose) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View for TUI model.
 func (m *SecretChoose) View() string {
 	view := `
 ╭────────────────────────────────────╮
@@ -106,7 +109,8 @@ func (m *SecretChoose) View() string {
 ╰────────────────────────────────────╯
 `
 
-	for i := 0; i < m.secretTypesLen; i += 1 {
+	// for i := 0; i < m.secretTypesLen; i++ {
+	for i := range m.secretTypesLen {
 		item := secretTypeName(int32(i))
 		if i == m.focusIndex {
 			item = focusedStyle.Copy().Render("[" + item + "]")
@@ -115,11 +119,6 @@ func (m *SecretChoose) View() string {
 	}
 
 	return m.state.F.Render(view, m.help.View(m.keys))
-}
-
-func (m *SecretChoose) ModelsSet(back *tea.Model, nxt []*tea.Model) {
-	m.modelBack = back
-	m.modelsSecretType = nxt
 }
 
 type SecretChooseInit struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// SecretAttrSet - sets secret attr.
 func (s *Store) SecretAttrSet(ctx context.Context, secretID entity.SecretID, attr entity.SecretAttr) error {
 	// create meta attr if not exists
 	var attrID int32
@@ -35,4 +36,6 @@ var (
 on conflict(name) do nothing returning id;`
 )
 
-var attrValueInsertQuery = `insert into scrt_attr (scrt_id, attr_id, value) values ($1, $2, $3) on conflict (scrt_id, attr_id) do update set value = $3`
+var attrValueInsertQuery = `insert into scrt_attr (scrt_id, attr_id, value)
+values ($1, $2, $3)
+on conflict (scrt_id, attr_id) do update set value = $3`

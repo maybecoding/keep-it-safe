@@ -1,6 +1,7 @@
+// Package api - endpoints of http server.
+//
 //go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=../../../../../pkg/api/v1/models.cfg.yaml ../../../../../pkg/api/v1/api.yaml
 //go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=../../../../../pkg/api/v1/cfg.yaml ../../../../../pkg/api/v1/api.yaml
-
 package api
 
 import (
@@ -11,21 +12,24 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/secret"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/user"
+	"github.com/maybecoding/keep-it-safe/pkg/logger"
 )
 
+// API structs implements generated strict openapi interface.
 type API struct {
 	user   *user.Service
 	secret *secret.Service
 }
 
-func New(user *user.Service, secret *secret.Service) *API {
-	return &API{user: user, secret: secret}
+// New creates new API struct.
+func New(usr *user.Service, scrt *secret.Service) *API {
+	return &API{user: usr, secret: scrt}
 }
 
 var _ StrictServerInterface = (*API)(nil)
 
-// Login user
-// (POST /login)
+// Login user.
+// (POST /login).
 func (a *API) Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error) {
 	if request.Body == nil {
 		return Login400Response{}, nil
@@ -41,9 +45,8 @@ func (a *API) Login(ctx context.Context, request LoginRequestObject) (LoginRespo
 	return Login200Response{Login200ResponseHeaders{SetCookie: cookie}}, nil
 }
 
-// (POST /register)
-// Register new user
-// (POST /register)
+// Register new user.
+// (POST /register).
 func (a *API) Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error) {
 	if request.Body == nil {
 		return Register400Response{}, nil
@@ -54,14 +57,13 @@ func (a *API) Register(ctx context.Context, request RegisterRequestObject) (Regi
 			return Register409Response{}, nil
 		}
 		return Register500Response{}, nil
-
 	}
 	cookie := authCookie(token)
 	return Register200Response{Register200ResponseHeaders{SetCookie: cookie}}, nil
 }
 
-// Get list of secrets of user
-// (GET /secrets)
+// SecretList Get list of secrets of user.
+// (GET /secrets).
 func (a *API) SecretList(ctx context.Context, request SecretListRequestObject) (SecretListResponseObject, error) {
 	userID, mErr := a.getUserID(request.Params.Authorization)
 	if mErr != nil {
@@ -70,6 +72,7 @@ func (a *API) SecretList(ctx context.Context, request SecretListRequestObject) (
 
 	list, err := a.secret.List(ctx, userID)
 	if err != nil {
+		logger.Error().Err(err).Msg("api - SecretList")
 		return SecretList500JSONResponse(models.Error{Error: err.Error()}), nil
 	}
 	resp := make(SecretList200JSONResponse, 0, len(list))
@@ -87,8 +90,8 @@ func (a *API) SecretList(ctx context.Context, request SecretListRequestObject) (
 	return resp, nil
 }
 
-// Creates new secret of user
-// (POST /secrets)
+// SecretSet - Creates new secret of user.
+// (POST /secrets).
 func (a *API) SecretSet(ctx context.Context, request SecretSetRequestObject) (SecretSetResponseObject, error) {
 	userID, mErr := a.getUserID(request.Params.Authorization)
 	if mErr != nil {
@@ -136,13 +139,14 @@ func (a *API) SecretSet(ctx context.Context, request SecretSetRequestObject) (Se
 
 	_, err := a.secret.Set(ctx, userID, data)
 	if err != nil {
+		logger.Error().Err(err).Msg("api - SecretSet")
 		return SecretSet500JSONResponse(models.Error{Error: err.Error()}), nil
 	}
 	return SecretSet200Response{}, nil
 }
 
-// Get secret by id
-// (GET /secrets/{secret_id})
+// SecretGetByID Get secret by id.
+// (GET /secrets/{secret_id}).
 func (a *API) SecretGetByID(ctx context.Context, request SecretGetByIDRequestObject) (SecretGetByIDResponseObject, error) {
 	userID, mErr := a.getUserID(request.Params.Authorization)
 	if mErr != nil {

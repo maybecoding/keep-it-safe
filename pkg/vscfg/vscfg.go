@@ -1,3 +1,4 @@
+// Package vscfg used for preparing config based on flags and env.
 package vscfg
 
 import (
@@ -11,17 +12,17 @@ import (
 	"time"
 )
 
-// Fn type for custom tag to string converter
+// Fn type for custom tag to string converter.
 type Fn func(tag reflect.StructTag) string
 
-// Tag converts tag to string directly
+// Tag converts tag to string directly.
 func Tag(tagName string) Fn {
 	return func(tag reflect.StructTag) string {
 		return tag.Get(tagName)
 	}
 }
 
-// Env converts tag to env value with name of tag
+// Env converts tag to env value with name of tag.
 func Env(tagName string) Fn {
 	return func(tag reflect.StructTag) string {
 		name := tag.Get(tagName)
@@ -32,7 +33,7 @@ func Env(tagName string) Fn {
 	}
 }
 
-// Flag converts tags for flag and flag usage to flag value
+// Flag converts tags for flag and flag usage to flag value.
 func Flag(tagFlag, tagUsage string) []Fn {
 	flags := make(map[string]*string)
 	once := sync.Once{}
@@ -70,6 +71,7 @@ func Flag(tagFlag, tagUsage string) []Fn {
 	return []Fn{prepare, getValues}
 }
 
+// FillByTags container for config handlers, executes all handlers due config preparing.
 func FillByTags(s reflect.Value, fns ...Fn) error {
 	for _, fn := range fns {
 		err := walk(s, fn)
@@ -80,9 +82,10 @@ func FillByTags(s reflect.Value, fns ...Fn) error {
 	return nil
 }
 
-// walk through struct fields without pointers
+// walk through struct fields without pointers.
 func walk(v reflect.Value, fn Fn) error {
-	for i := 0; i < v.NumField(); i += 1 {
+	for i := range v.NumField() {
+		// for i := 0; i < v.NumField(); i++ {
 		fld := v.Field(i)
 		fldT := v.Type().Field(i)
 
@@ -125,7 +128,7 @@ func walk(v reflect.Value, fn Fn) error {
 	return nil
 }
 
-// fills pointer with parsed from data string value
+// fills pointer with parsed from data string value.
 func fill(vPtr reflect.Value, data string) error {
 	v := vPtr.Elem()
 	t := v.Type()
@@ -156,7 +159,6 @@ func fill(vPtr reflect.Value, data string) error {
 		}
 	default:
 		return fmt.Errorf("failed to parse \"%s\", please implement handling of %v", data, v.Kind())
-
 	}
 	return nil
 }

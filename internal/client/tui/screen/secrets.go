@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
@@ -15,6 +16,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Secrets screen with secret list.
 type Secrets struct {
 	state      *state.State
 	list       list.Model
@@ -22,18 +24,19 @@ type Secrets struct {
 	addInitCmd tea.Cmd
 }
 
-// additional buttons
+// additional buttons.
 type secretsKeyMap struct {
 	reload   key.Binding
 	itemAdd  key.Binding
 	itemView key.Binding
 }
 
-func NewSecrets(state *state.State, addInitCmd tea.Cmd) *Secrets {
-	s := &Secrets{state: state}
+// NewSecrets creates new secrets.
+func NewSecrets(st *state.State, addInitCmd tea.Cmd) *Secrets {
+	s := &Secrets{state: st}
 	items := []list.Item{}
 
-	s.list = list.New(items, list.NewDefaultDelegate(), state.F.Width(), state.F.Height())
+	s.list = list.New(items, list.NewDefaultDelegate(), st.F.Width(), st.F.Height())
 	s.list.Title = "Secrets"
 
 	// add keys
@@ -69,7 +72,7 @@ func newListKeyMap() *secretsKeyMap {
 	}
 }
 
-// type for list item
+// type for list item.
 type item struct {
 	models.Secret
 }
@@ -100,12 +103,14 @@ func secretTypeName(st int32) string {
 	}
 }
 
+// Init TUI model.
 func (m *Secrets) Init() tea.Cmd {
 	setTableSize := func() tea.Msg { return tea.WindowSizeMsg{Width: m.state.F.WidthFull(), Height: m.state.F.HeightFull()} }
 
 	return tea.Batch(setTableSize, m.Reload)
 }
 
+// Update TUI model.
 func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
@@ -162,10 +167,12 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *Secrets) View() string {
 	return m.state.F.Render(m.list.View(), "")
 }
 
+// Reload reloads secret list.
 func (m *Secrets) Reload() tea.Msg {
 	log.Println("reload")
 	resp, err := m.state.C.SecretListWithResponse(context.Background(), &models.SecretListParams{Authorization: m.state.Token})
@@ -175,7 +182,7 @@ func (m *Secrets) Reload() tea.Msg {
 	}
 	ar := ActionResult{}
 	switch resp.StatusCode() {
-	case 200:
+	case http.StatusOK:
 		if resp != nil && resp.JSON200 != nil {
 			items := make([]list.Item, 0, len(*resp.JSON200))
 			for _, s := range *resp.JSON200 {
@@ -187,11 +194,11 @@ func (m *Secrets) Reload() tea.Msg {
 		} else {
 			ar.Result = "Failed to fetch list of secrets"
 		}
-	case 400:
+	case http.StatusBadRequest:
 		ar.Result = "Incorrect request " + string(resp.Body)
-	case 401:
+	case http.StatusUnauthorized:
 		ar.Result = "User unautorized"
-	case 500:
+	case http.StatusInternalServerError:
 		ar.Result = "Internal server error"
 	default:
 		ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode())
@@ -210,12 +217,14 @@ func (m *Secrets) failRender(s ...string) tea.Cmd {
 	return m.list.NewStatusMessage(msg)
 }
 
+// DataCmd func for converting data to tea cmd.
 func DataCmd(d models.Data) tea.Cmd {
 	return func() tea.Msg {
 		return d
 	}
 }
 
+// Add new item.
 func (m *Secrets) Add(d models.Data) tea.Cmd {
 	return func() tea.Msg {
 		log.Println("add")
@@ -225,15 +234,15 @@ func (m *Secrets) Add(d models.Data) tea.Cmd {
 		}
 		ar := ActionResult{}
 		switch resp.StatusCode {
-		case 200:
+		case http.StatusOK:
 			ar.Result = "Successefully added secret " + d.SecretName
 			ar.Success = true
 			ar.Cmd = m.Reload
-		case 400:
+		case http.StatusBadRequest:
 			ar.Result = "Incorrect request"
-		case 401:
+		case http.StatusUnauthorized:
 			ar.Result = "User unautorized"
-		case 500:
+		case http.StatusInternalServerError:
 			ar.Result = "Internal server error"
 		default:
 			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode)
@@ -243,6 +252,7 @@ func (m *Secrets) Add(d models.Data) tea.Cmd {
 	}
 }
 
+// ItemView view item from secret list.
 func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
 	log.Println("Start View")
 	return func() tea.Msg {
@@ -252,7 +262,7 @@ func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
 		}
 		ar := ActionResult{}
 		switch resp.StatusCode() {
-		case 200:
+		case http.StatusOK:
 			if resp.JSON200 == nil {
 				ar.Result = "Failed to load response"
 			} else {
@@ -286,11 +296,11 @@ func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
 					return nil
 				}
 			}
-		case 401:
+		case http.StatusUnauthorized:
 			ar.Result = "User unautorized"
-		case 404:
+		case http.StatusNotFound:
 			ar.Result = "Not found"
-		case 500:
+		case http.StatusInternalServerError:
 			ar.Result = "Internal server error"
 		default:
 			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode())

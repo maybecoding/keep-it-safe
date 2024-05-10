@@ -1,19 +1,19 @@
+// Package jwt used for JWT token check and generating.
 package jwt
 
 import (
 	"errors"
 	"fmt"
-
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Init returns 2 functions: 1. encode - converts token data to token string 2. decode - decodes token to token data
+// Init returns 2 functions: 1. Encode - converts token data to token string 2. Decode - decodes token to token data.
 func Init[T ~string, D any](secret string, expiresHours int) (encode func(D) (T, error), decode func(T) (*D, error)) {
 	type claims struct {
-		jwt.RegisteredClaims
 		TokenData D
+		jwt.RegisteredClaims
 	}
 
 	encode = func(tokenData D) (T, error) {

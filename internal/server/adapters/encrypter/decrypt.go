@@ -1,3 +1,4 @@
+// Package encrypter used for encryption on data.
 package encrypter
 
 import (
@@ -6,7 +7,7 @@ import (
 	"fmt"
 )
 
-// Decrypt using src data, src data Vector and encrypted encryption key, returns decrypted data or error
+// Decrypt using src data, src data Vector and encrypted encryption key, returns decrypted data or error.
 func (e *Encrypter) Decrypt(src []byte, nonce []byte, encrKeyEncrypted []byte) (dst []byte, err error) {
 	// using master key we must decrypt enctyption key
 	encrKey, err := decryptFix(e.masterKey, encrKeyEncrypted)

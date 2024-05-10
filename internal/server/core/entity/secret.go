@@ -11,6 +11,7 @@ type (
 	SecretMeta []SecretAttr
 )
 
+// Secret stores secret common info.
 type Secret struct {
 	ID      SecretID
 	UserID  UserID
@@ -20,6 +21,7 @@ type Secret struct {
 	Updated time.Time
 }
 
+// SecretDetail stores secret details.
 type SecretDetail struct {
 	Secret
 	Value        []byte
@@ -28,6 +30,7 @@ type SecretDetail struct {
 	Meta         SecretMeta
 }
 
+// SecretAttr stores secret attrs.
 type SecretAttr struct {
 	Attr  string
 	Value string

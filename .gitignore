@@ -22,6 +22,7 @@ go.work
 
 # db data
 db/data
+bin
 
 .DS_Store
 golangci-lint

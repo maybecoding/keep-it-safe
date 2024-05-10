@@ -1,3 +1,4 @@
+// Package pgstore storage.
 package pgstore
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// UserNew creates new user.
 func (s *Store) UserNew(ctx context.Context, login entity.UserLogin, hash entity.UserPasswordHash) (*entity.User, error) {
 	usr := entity.User{}
 	query := `insert into usr(login, hash) values(@login, @hash) returning id, login, hash;`

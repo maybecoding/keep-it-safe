@@ -10,6 +10,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// SecretGet returns secret by ID.
 func (s *Store) SecretGet(ctx context.Context, secretID entity.SecretID) (*entity.SecretDetail, error) {
 	// time.Sleep(1 * time.Minute)
 	secret, err := pgxutil.SelectRow(ctx, s.pg.Pool(ctx), `

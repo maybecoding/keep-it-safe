@@ -16,6 +16,7 @@ var (
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 )
 
+// ActionResult type for transfer result of action.
 type ActionResult struct {
 	Cmd     tea.Cmd
 	Result  string
@@ -29,25 +30,30 @@ type welcomeKeyMap struct {
 	Quit     key.Binding
 }
 
-func (k welcomeKeyMap) ShortHelp() []key.Binding {
+// ShortHelp returns short help for help compoent.
+func (k *welcomeKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Quit}
 }
 
-func (k welcomeKeyMap) FullHelp() [][]key.Binding {
+// ShortHelp returns full help for help compoent.
+func (k *welcomeKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Login, k.Register},
 		{k.Help, k.Quit},
 	}
 }
 
+// Welcome screen.
 type Welcome struct {
-	state *state.State
-	keys  welcomeKeyMap
-	help  help.Model
+	state                   *state.State
+	keys                    *welcomeKeyMap
+	help                    help.Model
+	buildVersion, buildTime string
 }
 
-func NewWelcome(state *state.State) *Welcome {
-	keyMap := welcomeKeyMap{
+// NewWelcome returns new welcome screen.
+func NewWelcome(st *state.State, buildVersion, buildTime string) *Welcome {
+	keyMap := &welcomeKeyMap{
 		Login: key.NewBinding(
 			key.WithKeys("l"),
 			key.WithHelp("l", "login"),
@@ -65,15 +71,17 @@ func NewWelcome(state *state.State) *Welcome {
 			key.WithHelp("esc/q", "quit"),
 		),
 	}
-	return &Welcome{state: state, keys: keyMap, help: help.New()}
+	return &Welcome{state: st, keys: keyMap, help: help.New(), buildVersion: buildVersion, buildTime: buildTime}
 }
 
 var _ tea.Model = (*Welcome)(nil)
 
+// Init TUI model.
 func (m *Welcome) Init() tea.Cmd {
 	return tea.EnterAltScreen
 }
 
+// Update TUI model.
 func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -97,6 +105,7 @@ func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View for TUI model.
 func (m *Welcome) View() string {
 	welcomeT := `╭────────────────────────────────────╮
 │    Welcome to Keep IT Safe!        │
@@ -105,6 +114,8 @@ func (m *Welcome) View() string {
 │ to Start keeping your secrets Safe │
 ╰────────────────────────────────────╯
 `
+	welcomeT += "Build Version: " + m.buildVersion + "\n"
+	welcomeT += "Build Time: " + m.buildTime + "\n"
 
 	hT := m.help.View(m.keys)
 

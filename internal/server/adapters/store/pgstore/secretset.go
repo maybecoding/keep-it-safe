@@ -9,6 +9,7 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
+// SecretSet idempotental saves secret.
 func (s *Store) SecretSet(ctx context.Context, scrt entity.SecretDetail) (entity.SecretID, error) {
 	now := time.Now()
 	var secretID entity.SecretID

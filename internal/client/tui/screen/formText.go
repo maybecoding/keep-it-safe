@@ -1,14 +1,13 @@
 package screen
 
 import (
-	"log"
-
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 )
 
+// FormText struct for form with name and text.
 type FormText struct {
 	state       *state.State
 	name        string
@@ -16,12 +15,19 @@ type FormText struct {
 	modelSubmit *tea.Model
 	callback    func([]string) tea.Cmd
 
-	input      textinput.Model
 	textarea   textarea.Model
+	input      textinput.Model
 	focusIndex int
 }
 
-func NewFormText(state *state.State, name, placeholder string, modelBack *tea.Model, modelSubmit *tea.Model, callback func([]string) tea.Cmd) *FormText {
+// NewFormText returns new form text.
+func NewFormText(st *state.State,
+	name,
+	placeholder string,
+	modelBack *tea.Model,
+	modelSubmit *tea.Model,
+	callback func([]string) tea.Cmd,
+) *FormText {
 	input := textinput.New()
 	input.Placeholder = "Name"
 	input.Focus()
@@ -34,7 +40,7 @@ func NewFormText(state *state.State, name, placeholder string, modelBack *tea.Mo
 
 	return &FormText{
 		input:       input,
-		state:       state,
+		state:       st,
 		textarea:    ta,
 		modelBack:   modelBack,
 		modelSubmit: modelSubmit,
@@ -45,6 +51,7 @@ func NewFormText(state *state.State, name, placeholder string, modelBack *tea.Mo
 
 var _ tea.Model = (*Form)(nil)
 
+// Init TUI model.
 func (m *FormText) Init() tea.Cmd {
 	setTableSize := func() tea.Msg { return tea.WindowSizeMsg{Width: m.state.F.WidthFull(), Height: m.state.F.HeightFull()} }
 	m.input.SetValue("")
@@ -53,6 +60,7 @@ func (m *FormText) Init() tea.Cmd {
 	return tea.Batch(textarea.Blink, setTableSize)
 }
 
+// Update TUI model.
 func (m *FormText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -65,25 +73,22 @@ func (m *FormText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return *m.modelBack, nil
 			}
 		case tea.KeyTab:
-			if m.FocusInput() {
+			switch {
+			case m.FocusInput():
 				m.input.Blur()
 				cmds = append(cmds, m.textarea.Focus())
-			} else if m.FocusText() {
+			case m.FocusText():
 				m.textarea.Blur()
-			} else {
+			default:
 				cmds = append(cmds, m.input.Focus())
 			}
 			m.FocusNext()
 
 		case tea.KeyEnter:
-			log.Println("text enter")
 			if m.FocusSubmit() && m.input.Value() != "" && m.textarea.Value() != "" {
-				log.Println("text ok")
 				if m.callback == nil {
-					log.Println("text callback nil")
 					return *m.modelSubmit, m.Fields
 				}
-				log.Println("text before callback")
 				return *m.modelSubmit, m.callback(m.FieldsStr())
 			}
 
@@ -107,6 +112,7 @@ func (m *FormText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// View for TUI model.
 func (m *FormText) View() string {
 	top := `╭────────────────────────────────────╮
 ` + m.state.F.SingleHeader(m.name) + `
@@ -130,26 +136,33 @@ func (m *FormText) View() string {
 	return m.state.F.Render(top+m.textarea.View(), bottom)
 }
 
+// FocusInput - is focus on secret name.
 func (m *FormText) FocusInput() bool {
 	return m.focusIndex == 0
 }
 
+// FocusText - is focus on secret text.
 func (m *FormText) FocusText() bool {
 	return m.focusIndex == 1
 }
 
+// FocusSubmit - is focus on submit button.
 func (m *FormText) FocusSubmit() bool {
 	return m.focusIndex == 2
 }
 
+// FocusNext - focus to next element.
 func (m *FormText) FocusNext() {
-	m.focusIndex = (m.focusIndex + 1) % 3
+	const componentCount = 3
+	m.focusIndex = (m.focusIndex + 1) % componentCount
 }
 
+// Fields returns form fields as tea.Msg.
 func (m *FormText) Fields() tea.Msg {
 	return FormFields{m.input.Value(), m.textarea.Value()}
 }
 
+// FieldsStr returns form fields as string slice.
 func (m *FormText) FieldsStr() []string {
 	return []string{m.input.Value(), m.textarea.Value()}
 }
