@@ -1,24 +1,112 @@
 package tui
 
 import (
+	"encoding/hex"
 	"fmt"
+	"log"
 
+	frame "github.com/maybecoding/keep-it-safe/internal/client/tui/render"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/screen"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 	client "github.com/maybecoding/keep-it-safe/internal/client/api/v1"
+	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
 )
 
-func Run(c *client.ClientWithResponses, height int) error {
-	s := &state.State{C: c, WindowHeight: height}
+func Run(c *client.ClientWithResponses, height int, logPath string) error {
+	s := &state.State{C: c, F: frame.New().MarginSet(1, 2)}
 
-	s.Register = screen.NewRegister(s)
-	s.Login = screen.NewLogin(s)
-	s.Secrets = screen.NewSecrets(s)
-	s.Welcome = screen.NewWelcome(s)
+	tea.LogToFile(logPath, "tea")
 
-	p := tea.NewProgram(s.Welcome, tea.WithAltScreen())
+	s.Welcome = new(tea.Model)
+	s.Register = new(tea.Model)
+	s.Login = new(tea.Model)
+	s.Secrets = new(tea.Model)
+	s.SecretChoose = new(tea.Model)
+
+	s.SecretAdd.Credential = new(tea.Model)
+	s.SecretAdd.Text = new(tea.Model)
+	s.SecretAdd.Binary = new(tea.Model)
+	s.SecretAdd.BankCard = new(tea.Model)
+
+	var secretAddInitCmd tea.Cmd = func() tea.Msg {
+		return screen.SecretChooseInit{
+			Back:        s.Secrets,
+			SecretTypes: []*tea.Model{s.SecretAdd.Credential, s.SecretAdd.Text, s.SecretAdd.Binary, s.SecretAdd.BankCard},
+		}
+	}
+	var secretViewInitCmd tea.Cmd = func() tea.Msg {
+		return screen.SecretChooseInit{
+			Back:        s.Secrets,
+			SecretTypes: []*tea.Model{nil, s.SecretAdd.Text, nil, nil},
+		}
+	}
+
+	*s.Welcome = screen.NewWelcome(s)
+	*s.Register = screen.NewRegister(s)
+	*s.Login = screen.NewLogin(s)
+	*s.Secrets = screen.NewSecrets(s, secretAddInitCmd, secretViewInitCmd)
+	*s.SecretChoose = screen.NewSecretChoose(s)
+
+	*s.SecretAdd.Credential = screen.NewForm(s,
+		"Add credentials",
+		s.Secrets,
+		s.Secrets,
+		[]screen.InputParam{{Placeholder: "Secret Name"}, {Placeholder: "Login"}, {Placeholder: "Password", Password: true}},
+		func(s []string) tea.Cmd {
+			return screen.DataCmd(models.Data{
+				SecretName: s[0],
+				SecretType: screen.SecretTypeCredentials,
+				Credentials: &models.DataCredentials{
+					Login:    s[1],
+					Password: s[2],
+				},
+			})
+		},
+	)
+
+	*s.SecretAdd.Text = screen.NewSecretAddText(s)
+	*s.SecretAdd.Binary = screen.NewFormText(s,
+		"Add Binary Data",
+		"Use Hex symbols for writing binary data.",
+		s.Secrets,
+		s.Secrets,
+		func(s []string) tea.Cmd {
+			hexBytes, err := hex.DecodeString(s[1])
+			log.Println(hexBytes)
+			if err != nil {
+				panic(err)
+			}
+			return screen.DataCmd(models.Data{
+				SecretName: s[0],
+				SecretType: screen.SecretTypeBinary,
+				Binary:     &hexBytes,
+			})
+		},
+	)
+
+	*s.SecretAdd.BankCard = screen.NewForm(s,
+		"Add bank card",
+		s.Secrets,
+		s.Secrets,
+		[]screen.InputParam{{Placeholder: "Secret Name"}, {Placeholder: "Holder"}, {Placeholder: "Number"}, {Placeholder: "Valid"}, {Placeholder: "Code"}},
+		func(s []string) tea.Cmd {
+			return screen.DataCmd(models.Data{
+				SecretName: s[0],
+				SecretType: screen.SecretTypeBankCard,
+				BankCard: &models.DataBankCard{
+					Holder:         s[1],
+					Number:         s[2],
+					Valid:          s[3],
+					ValidationCode: s[4],
+				},
+			})
+		},
+	)
+
+	p := tea.NewProgram(*s.Welcome)
+	// p := tea.NewProgram(screen.NewForm(s, ), tea.WithAltScreen())
 	_, err := p.Run()
 	if err != nil {
 		return fmt.Errorf("tui - Run: %w", err)

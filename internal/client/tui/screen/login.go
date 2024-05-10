@@ -3,6 +3,7 @@ package screen
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
@@ -92,7 +93,7 @@ func (m *Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s := msg.String()
 		switch {
 		case key.Matches(msg, m.keys.Back):
-			return m.state.Welcome, nil
+			return *m.state.Welcome, nil
 
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
@@ -137,9 +138,11 @@ func (m *Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case ActionResult:
 		if msg.Result == "" {
-			return m.state.Welcome, func() tea.Msg { return msg }
+			return *m.state.Secrets, (*m.state.Secrets).Init() // nil // func() tea.Msg { return msg }
 		}
 		m.errorMessage = msg.Result
+	case tea.WindowSizeMsg:
+		m.state.F.WinSize(msg)
 	}
 
 	// Handle character input and blinking
@@ -181,16 +184,13 @@ func (m *Login) View() string {
 		view += errorStyle.Copy().Render(m.errorMessage) + "\n"
 	}
 
-	helpView := m.help.View(m.keys)
-	height := m.state.WindowHeight - strings.Count(view, "\n") - strings.Count(helpView, "\n")
-
-	return view + strings.Repeat("\n", height) + helpView
+	return m.state.F.Render(view, m.help.View(m.keys))
 }
 
 func (m Login) Login() tea.Msg {
 	resp, err := m.state.C.LoginWithResponse(context.Background(), models.Credential{Login: m.inputs[0].Value(), Password: m.inputs[1].Value()})
 	if err != nil {
-		return ActionResult{err.Error()}
+		return ActionResult{Result: err.Error()}
 	}
 
 	ar := ActionResult{}
@@ -199,8 +199,10 @@ func (m Login) Login() tea.Msg {
 		if resp != nil && resp.HTTPResponse != nil {
 			auth := strings.Split(resp.HTTPResponse.Header.Get("Set-Cookie"), "=")
 			if len(auth) > 1 && auth[0] != "" {
-				m.state.Token = auth[1]
+				m.state.Token = strings.ReplaceAll(auth[1], "\"", "")
+				log.Println("set token", m.state.Token)
 			} else {
+				log.Println("Failed to get authorization token", m.state.Token)
 				ar.Result = "Failed to get authorization token"
 			}
 		}

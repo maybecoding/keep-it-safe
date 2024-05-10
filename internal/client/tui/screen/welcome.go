@@ -1,8 +1,6 @@
 package screen
 
 import (
-	"strings"
-
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -19,7 +17,9 @@ var (
 )
 
 type ActionResult struct {
-	Result string
+	Cmd     tea.Cmd
+	Result  string
+	Success bool
 }
 
 type welcomeKeyMap struct {
@@ -61,8 +61,8 @@ func NewWelcome(state *state.State) *Welcome {
 			key.WithHelp("?", "toggle help"),
 		),
 		Quit: key.NewBinding(
-			key.WithKeys("esc", "ctrl+c"),
-			key.WithHelp("esc", "quit"),
+			key.WithKeys("esc", "q", "ctrl+c"),
+			key.WithHelp("esc/q", "quit"),
 		),
 	}
 	return &Welcome{state: state, keys: keyMap, help: help.New()}
@@ -71,7 +71,7 @@ func NewWelcome(state *state.State) *Welcome {
 var _ tea.Model = (*Welcome)(nil)
 
 func (m *Welcome) Init() tea.Cmd {
-	return nil
+	return tea.EnterAltScreen
 }
 
 func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -79,9 +79,9 @@ func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keys.Register):
-			return m.state.Register, nil
+			return *m.state.Register, (*m.state.Register).Init()
 		case key.Matches(msg, m.keys.Login):
-			return m.state.Login, nil
+			return *m.state.Login, (*m.state.Login).Init()
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Quit):
@@ -89,27 +89,24 @@ func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	// if registration or login successful
 	case ActionResult:
-		return m.state.Secrets, nil
+		return *m.state.Secrets, nil
+	case tea.WindowSizeMsg:
+		m.state.F.WinSize(msg)
 	}
+
 	return m, nil
 }
 
 func (m *Welcome) View() string {
-	welcomeT := `
-╭────────────────────────────────────╮
-│    Welcome to Keep IT Safe!        │`
-
-	if m.state.Token == "" {
-		welcomeT += `
+	welcomeT := `╭────────────────────────────────────╮
+│    Welcome to Keep IT Safe!        │
 │                                    │
 │     Please Register or Login       │
-│ to Start keeping your secrets Safe │`
-	}
-	welcomeT += `
+│ to Start keeping your secrets Safe │
 ╰────────────────────────────────────╯
 `
-	helpView := m.help.View(m.keys)
-	height := m.state.WindowHeight - strings.Count(welcomeT, "\n") - strings.Count(helpView, "\n")
 
-	return welcomeT + strings.Repeat("\n", height) + helpView
+	hT := m.help.View(m.keys)
+
+	return m.state.F.Render(welcomeT, hT)
 }

@@ -24,6 +24,12 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	// logFile, err := os.OpenFile("bubletea.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	// if err != nil {
+	// 	fmt.Println(logFile)
+	// 	return
+	// }
+	logFile := "bubletea.log"
 
-	tui.Run(c, cfg.TUI.WindowHeight)
+	tui.Run(c, cfg.TUI.WindowHeight, logFile)
 }
