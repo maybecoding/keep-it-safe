@@ -5,12 +5,14 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
+
+	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 )
 
 // Decrypt using src data, src data Vector and encrypted encryption key, returns decrypted data or error.
-func (e *Encrypter) Decrypt(src []byte, nonce []byte, encrKeyEncrypted []byte) (dst []byte, err error) {
+func (e *Encrypter) Decrypt(src entity.EncryptionData) (dst []byte, err error) {
 	// using master key we must decrypt enctyption key
-	encrKey, err := decryptFix(e.masterKey, encrKeyEncrypted)
+	encrKey, err := decryptFix(e.masterKey, src.EncryptionKeyEncrypted)
 	if err != nil {
 		return nil, fmt.Errorf("encrypter - Decrypt - decryptFix: %w", err)
 	}
@@ -29,7 +31,7 @@ func (e *Encrypter) Decrypt(src []byte, nonce []byte, encrKeyEncrypted []byte) (
 	}
 
 	// Decrypt
-	dst, err = aesgcm.Open(nil, nonce, src, nil)
+	dst, err = aesgcm.Open(nil, src.Nonce, src.Bytes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("encrypter - Decrypt - aesgcm.Open: %w", err)
 	}

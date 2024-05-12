@@ -7,8 +7,10 @@ package api
 import (
 	"context"
 	"errors"
+	"net/http"
 
-	"github.com/maybecoding/keep-it-safe/internal/server/adapters/api/v1/models"
+	"github.com/maybecoding/keep-it-safe/generated/models"
+	"github.com/maybecoding/keep-it-safe/generated/server"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/secret"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/user"
@@ -26,56 +28,56 @@ func New(usr *user.Service, scrt *secret.Service) *API {
 	return &API{user: usr, secret: scrt}
 }
 
-var _ StrictServerInterface = (*API)(nil)
+var _ server.StrictServerInterface = (*API)(nil)
 
 // Login user.
 // (POST /login).
-func (a *API) Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error) {
+func (a *API) Login(ctx context.Context, request server.LoginRequestObject) (server.LoginResponseObject, error) {
 	if request.Body == nil {
-		return Login400Response{}, nil
+		return server.Login400Response{}, nil
 	}
 	token, err := a.user.Login(ctx, entity.UserLogin(request.Body.Login), entity.UserPassword(request.Body.Password))
 	if err != nil {
 		if errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrIncorrectPassword) {
-			return Login401JSONResponse{}, nil
+			return server.Login401JSONResponse{}, nil
 		}
-		return Login500JSONResponse{}, nil
+		return server.Login500JSONResponse{}, nil
 	}
 	cookie := authCookie(token)
-	return Login200Response{Login200ResponseHeaders{SetCookie: cookie}}, nil
+	return server.Login200Response{Headers: server.Login200ResponseHeaders{SetCookie: cookie}}, nil
 }
 
 // Register new user.
 // (POST /register).
-func (a *API) Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error) {
+func (a *API) Register(ctx context.Context, request server.RegisterRequestObject) (server.RegisterResponseObject, error) {
 	if request.Body == nil {
-		return Register400Response{}, nil
+		return server.Register400Response{}, nil
 	}
 	token, err := a.user.Register(ctx, entity.UserLogin(request.Body.Login), entity.UserPassword(request.Body.Password))
 	if err != nil {
 		if errors.Is(err, entity.ErrUserNotAvailable) {
-			return Register409Response{}, nil
+			return server.Register409Response{}, nil
 		}
-		return Register500Response{}, nil
+		return server.Register500Response{}, nil
 	}
 	cookie := authCookie(token)
-	return Register200Response{Register200ResponseHeaders{SetCookie: cookie}}, nil
+	return server.Register200Response{Headers: server.Register200ResponseHeaders{SetCookie: cookie}}, nil
 }
 
 // SecretList Get list of secrets of user.
 // (GET /secrets).
-func (a *API) SecretList(ctx context.Context, request SecretListRequestObject) (SecretListResponseObject, error) {
-	userID, mErr := a.getUserID(request.Params.Authorization)
+func (a *API) SecretList(ctx context.Context, request server.SecretListRequestObject) (server.SecretListResponseObject, error) {
+	userID, mErr := a.user.GetUserID(request.Params.Authorization)
 	if mErr != nil {
-		return SecretList401JSONResponse(*mErr), nil
+		return server.SecretList401JSONResponse(*mErr), nil
 	}
 
 	list, err := a.secret.List(ctx, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("api - SecretList")
-		return SecretList500JSONResponse(models.Error{Error: err.Error()}), nil
+		return server.SecretList500JSONResponse(models.Error{Error: err.Error()}), nil
 	}
-	resp := make(SecretList200JSONResponse, 0, len(list))
+	resp := make(server.SecretList200JSONResponse, 0, len(list))
 	for _, s := range list {
 		resp = append(resp, models.Secret{
 			Created: s.Created,
@@ -92,10 +94,10 @@ func (a *API) SecretList(ctx context.Context, request SecretListRequestObject) (
 
 // SecretSet - Creates new secret of user.
 // (POST /secrets).
-func (a *API) SecretSet(ctx context.Context, request SecretSetRequestObject) (SecretSetResponseObject, error) {
-	userID, mErr := a.getUserID(request.Params.Authorization)
+func (a *API) SecretSet(ctx context.Context, request server.SecretSetRequestObject) (server.SecretSetResponseObject, error) {
+	userID, mErr := a.user.GetUserID(request.Params.Authorization)
 	if mErr != nil {
-		return SecretSet401JSONResponse(*mErr), nil
+		return server.SecretSet401JSONResponse(*mErr), nil
 	}
 	b := request.Body
 	if b == nil ||
@@ -103,7 +105,7 @@ func (a *API) SecretSet(ctx context.Context, request SecretSetRequestObject) (Se
 		b.SecretType == int32(entity.SecretTypeText) && b.Text == nil ||
 		b.SecretType == int32(entity.SecretTypeBinary) && b.Binary == nil ||
 		b.SecretType == int32(entity.SecretTypeBankCard) && b.BankCard == nil {
-		return SecretSet400Response{}, nil
+		return server.SecretSet400Response{}, nil
 	}
 
 	data := entity.Data{
@@ -140,25 +142,25 @@ func (a *API) SecretSet(ctx context.Context, request SecretSetRequestObject) (Se
 	_, err := a.secret.Set(ctx, userID, data)
 	if err != nil {
 		logger.Error().Err(err).Msg("api - SecretSet")
-		return SecretSet500JSONResponse(models.Error{Error: err.Error()}), nil
+		return server.SecretSet500JSONResponse(models.Error{Error: err.Error()}), nil
 	}
-	return SecretSet200Response{}, nil
+	return server.SecretSet200Response{}, nil
 }
 
 // SecretGetByID Get secret by id.
 // (GET /secrets/{secret_id}).
-func (a *API) SecretGetByID(ctx context.Context, request SecretGetByIDRequestObject) (SecretGetByIDResponseObject, error) {
-	userID, mErr := a.getUserID(request.Params.Authorization)
+func (a *API) SecretGetByID(ctx context.Context, request server.SecretGetByIDRequestObject) (server.SecretGetByIDResponseObject, error) {
+	userID, mErr := a.user.GetUserID(request.Params.Authorization)
 	if mErr != nil {
-		return SecretGetByID401JSONResponse(*mErr), nil
+		return server.SecretGetByID401JSONResponse(*mErr), nil
 	}
 
 	data, err := a.secret.GetByID(ctx, userID, entity.SecretID(request.SecretId))
 	if err != nil {
 		if errors.Is(err, entity.ErrSecretNotFound) || errors.Is(err, entity.ErrSecretForbiden) {
-			return SecretGetByID404Response{}, nil
+			return server.SecretGetByID404Response{}, nil
 		}
-		return SecretGetByID500JSONResponse(models.Error{Error: err.Error()}), nil
+		return server.SecretGetByID500JSONResponse(models.Error{Error: err.Error()}), nil
 	}
 	resp := models.Data{
 		SecretName: string(data.SecretName),
@@ -191,5 +193,13 @@ func (a *API) SecretGetByID(ctx context.Context, request SecretGetByIDRequestObj
 		resp.SecretMeta = &meta
 	}
 
-	return SecretGetByID200JSONResponse(resp), err
+	return server.SecretGetByID200JSONResponse(resp), err
+}
+
+func authCookie(token entity.Token) string {
+	c := &http.Cookie{
+		Name:  "Authorization",
+		Value: "Bearer " + string(token),
+	}
+	return c.String()
 }

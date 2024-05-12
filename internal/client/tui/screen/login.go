@@ -3,11 +3,10 @@ package screen
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
-	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
+	"github.com/maybecoding/keep-it-safe/generated/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
@@ -217,7 +216,7 @@ func (m *Login) Login() tea.Msg {
 				m.state.Token = strings.ReplaceAll(auth[1], "\"", "")
 				logger.Debug().Str("token", m.state.Token).Msg("set token")
 			} else {
-				log.Println("Failed to get authorization token", m.state.Token)
+				logger.Error().Msgf("Failed to get authorization token %s", m.state.Token)
 				ar.Result = "Failed to get authorization token"
 			}
 		}

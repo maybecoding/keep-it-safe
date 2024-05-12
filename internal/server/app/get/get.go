@@ -2,9 +2,9 @@
 package get
 
 import (
-	"github.com/maybecoding/keep-it-safe/internal/server/adapters/api/v1/httpserver"
 	"github.com/maybecoding/keep-it-safe/internal/server/adapters/encrypter"
 	"github.com/maybecoding/keep-it-safe/internal/server/adapters/store/pgstore"
+	"github.com/maybecoding/keep-it-safe/internal/server/app/httpserver"
 	"github.com/maybecoding/keep-it-safe/internal/server/config"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/entity"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/secret"

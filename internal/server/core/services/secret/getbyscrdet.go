@@ -10,7 +10,12 @@ import (
 
 func (s *Service) getByScrDet(scrDet entity.SecretDetail) (*entity.Data, error) {
 	// decrypt
-	dataB, err := s.encr.Decrypt(scrDet.Value, scrDet.Nonce, scrDet.EncryptionSK)
+	srcData := entity.EncryptionData{
+		Bytes:                  scrDet.Value,
+		Nonce:                  scrDet.Nonce,
+		EncryptionKeyEncrypted: scrDet.EncryptionSK,
+	}
+	dataB, err := s.encr.Decrypt(srcData)
 	if err != nil {
 		return nil, fmt.Errorf("secret - getByScrDet - encr.Decrypt: %w", err)
 	}

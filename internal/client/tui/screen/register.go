@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
+	"github.com/maybecoding/keep-it-safe/generated/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 
 	"github.com/charmbracelet/bubbles/help"

@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"net/http"
 
-	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
+	"github.com/maybecoding/keep-it-safe/generated/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
+	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -135,7 +135,7 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.itemAdd):
 			return *m.state.SecretChoose, m.addInitCmd
 		case key.Matches(msg, m.keys.itemView) && secret != nil:
-			cmds = append(cmds, m.ItemView(*secret))
+			cmds = append(cmds, m.ItemView(secret))
 		}
 
 	case tea.WindowSizeMsg:
@@ -149,7 +149,7 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, m.failRender(msg.Result))
 		}
 		if msg.Cmd != nil {
-			log.Println("add to cmd")
+			logger.Debug().Msg("add to cmd")
 			cmds = append(cmds, msg.Cmd)
 		}
 	case FormViewInit:
@@ -174,10 +174,10 @@ func (m *Secrets) View() string {
 
 // Reload reloads secret list.
 func (m *Secrets) Reload() tea.Msg {
-	log.Println("reload")
+	logger.Debug().Msg("reload")
 	resp, err := m.state.C.SecretListWithResponse(context.Background(), &models.SecretListParams{Authorization: m.state.Token})
 	if err != nil {
-		log.Println("Reload error", err.Error())
+		logger.Error().Msgf("Reload error: %s", err.Error())
 		return ActionResult{Result: err.Error()}
 	}
 	ar := ActionResult{}
@@ -203,7 +203,7 @@ func (m *Secrets) Reload() tea.Msg {
 	default:
 		ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode())
 	}
-	log.Println("Reload result", ar.Result)
+	logger.Debug().Interface("result", ar.Result).Msg("Reload result")
 	return ar
 }
 
@@ -227,11 +227,14 @@ func DataCmd(d models.Data) tea.Cmd {
 // Add new item.
 func (m *Secrets) Add(d models.Data) tea.Cmd {
 	return func() tea.Msg {
-		log.Println("add")
+		logger.Debug().Msg("add")
 		resp, err := m.state.C.SecretSet(context.Background(), &models.SecretSetParams{Authorization: m.state.Token}, d)
 		if err != nil {
 			return ActionResult{Result: err.Error()}
 		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 		ar := ActionResult{}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -247,14 +250,14 @@ func (m *Secrets) Add(d models.Data) tea.Cmd {
 		default:
 			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode)
 		}
-		log.Println("Reload result", ar.Result)
+		logger.Debug().Interface("result", ar.Result).Msg("Reload result")
 		return ar
 	}
 }
 
 // ItemView view item from secret list.
-func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
-	log.Println("Start View")
+func (m *Secrets) ItemView(secret *models.Secret) tea.Cmd {
+	logger.Debug().Msg("Start View")
 	return func() tea.Msg {
 		resp, err := m.state.C.SecretGetByIDWithResponse(context.Background(), secret.Id, &models.SecretGetByIDParams{Authorization: m.state.Token})
 		if err != nil {
@@ -270,7 +273,7 @@ func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
 				ar.Result = "Successefully got secret"
 				ar.Success = true
 				ar.Cmd = func() tea.Msg {
-					viewInit := FormViewInit{Name: fmt.Sprintf(`Secret "%s"`, secret.Name), ModelBack: m.state.Secrets}
+					viewInit := FormViewInit{Name: fmt.Sprintf(`Secret :%q`, secret.Name), ModelBack: m.state.Secrets}
 					switch secret.Type {
 					case SecretTypeCredentials:
 						viewInit.Components = []FormViewComponent{{Name: "Login", Value: d.Credentials.Login}, {Name: "Password", Value: d.Credentials.Password}}
@@ -305,7 +308,7 @@ func (m *Secrets) ItemView(secret models.Secret) tea.Cmd {
 		default:
 			ar.Result = fmt.Sprintf("Unhandled result code %d\n", resp.StatusCode())
 		}
-		log.Println("Reload result", ar.Result)
+		logger.Debug().Interface("result", ar.Result).Msg("Reload result")
 		return ar
 	}
 }

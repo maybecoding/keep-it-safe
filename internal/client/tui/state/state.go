@@ -2,7 +2,7 @@ package state
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	client "github.com/maybecoding/keep-it-safe/internal/client/api/v1"
+	client "github.com/maybecoding/keep-it-safe/generated/client"
 	frame "github.com/maybecoding/keep-it-safe/internal/client/tui/render"
 )
 

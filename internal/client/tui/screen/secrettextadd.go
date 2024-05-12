@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
+	"github.com/maybecoding/keep-it-safe/generated/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 )
 

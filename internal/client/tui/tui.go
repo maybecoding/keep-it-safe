@@ -10,8 +10,8 @@ import (
 	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
 	tea "github.com/charmbracelet/bubbletea"
-	client "github.com/maybecoding/keep-it-safe/internal/client/api/v1"
-	"github.com/maybecoding/keep-it-safe/internal/client/api/v1/models"
+	client "github.com/maybecoding/keep-it-safe/generated/client"
+	"github.com/maybecoding/keep-it-safe/generated/models"
 )
 
 func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {

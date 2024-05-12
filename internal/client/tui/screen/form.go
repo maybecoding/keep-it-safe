@@ -68,7 +68,7 @@ func (m *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case s == tea.KeyLeft.String():
+		case s == tea.KeyLeft.String() && m.focusIndex == len(m.inputs) || s == tea.KeyCtrlLeft.String() && m.focusIndex < len(m.inputs):
 			return *m.modelBack, nil
 
 		case s == "ctrl+c" || s == "esc":
@@ -152,7 +152,12 @@ func (m *Form) View() string {
 	}
 	view += "\n" + submit + "\n"
 
-	return m.state.F.Render(view, "ctrl+c quit • ← back")
+	backKey := "←"
+	if m.focusIndex < len(m.inputs) {
+		backKey = "Ctrl + " + backKey
+	}
+
+	return m.state.F.Render(view, "ctrl+c quit • "+backKey+" back")
 }
 
 // Fields returns form fields as tea.msg.

@@ -83,3 +83,11 @@ $(PLATFORMS):
 	)
 
 
+.PHONY: gen
+gen:
+	mkdir -pv generated/models
+	mkdir -pv generated/client
+	mkdir -pv generated/server
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=./pkg/api/v1/models.cfg.yaml ./pkg/api/v1/api.yaml
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=./pkg/api/v1/server.cfg.yaml ./pkg/api/v1/api.yaml
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=./pkg/api/v1/client.cfg.yaml ./pkg/api/v1/api.yaml

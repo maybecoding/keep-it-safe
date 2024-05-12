@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/maybecoding/keep-it-safe/generated/server"
 	"github.com/maybecoding/keep-it-safe/internal/server/adapters/api/v1"
 	"github.com/maybecoding/keep-it-safe/internal/server/config"
 	"github.com/maybecoding/keep-it-safe/internal/server/core/services/secret"
@@ -28,15 +29,15 @@ func New(cfg *config.HTTP, u *user.Service, s *secret.Service) *Server {
 
 func (s *Server) Run(_ context.Context) error {
 	logger.Info().Msg("Starting HTTP server")
-	swagger, err := api.GetSwagger()
+	swagger, err := server.GetSwagger()
 	if err != nil {
 		return fmt.Errorf("http - New - api.GetSwagger: %w", err)
 	}
 
 	swgAPI := api.New(s.user, s.secret)
 
-	strictHandler := api.NewStrictHandler(swgAPI, nil)
-	h := api.HandlerFromMux(strictHandler, http.NewServeMux())
+	strictHandler := server.NewStrictHandler(swgAPI, nil)
+	h := server.HandlerFromMux(strictHandler, http.NewServeMux())
 
 	handler := middleware.OapiRequestValidator(swagger)(h)
 	s.server = &http.Server{Addr: s.cfg.Address, Handler: handler}

@@ -17,8 +17,8 @@ type Store interface {
 
 // Encrypter interface for encryption functions used in service.
 type Encrypter interface {
-	Decrypt(src []byte, nonce []byte, encrKeyEncrypted []byte) (dst []byte, err error)
-	Encrypt(src []byte) (dst []byte, nonce []byte, keyEncr []byte, err error)
+	Decrypt(src entity.EncryptionData) (dst []byte, err error)
+	Encrypt(src []byte) (result entity.EncryptionData, err error)
 }
 
 // Service struct of service.

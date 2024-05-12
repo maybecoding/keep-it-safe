@@ -24,6 +24,12 @@ go.work
 db/data
 bin
 
+# Generated files
+generated
+
+# Log files
+*.log
+
 .DS_Store
 golangci-lint
 

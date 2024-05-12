@@ -34,7 +34,7 @@ func (s *Service) Set(ctx context.Context, userID entity.UserID, data entity.Dat
 	dataB := buf.Bytes()
 
 	// encrypt data
-	dst, nonce, keyEncr, err := s.encr.Encrypt(dataB)
+	encrData, err := s.encr.Encrypt(dataB)
 	if err != nil {
 		return 0, fmt.Errorf("secret - Set - encr.Encrypt: %w", err)
 	}
@@ -46,9 +46,9 @@ func (s *Service) Set(ctx context.Context, userID entity.UserID, data entity.Dat
 			Type:   data.SecretType,
 			Name:   data.SecretName,
 		},
-		Value:        dst,
-		Nonce:        nonce,
-		EncryptionSK: keyEncr,
+		Value:        encrData.Bytes,
+		Nonce:        encrData.Nonce,
+		EncryptionSK: encrData.EncryptionKeyEncrypted,
 		Meta:         data.SecretMeta,
 	}
 

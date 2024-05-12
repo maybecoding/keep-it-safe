@@ -32,15 +32,12 @@ func encryptFix(key []byte, src []byte) ([]byte, error) {
 	src = append(src, make([]byte, aes.BlockSize*blockCnt-srcLen)...)
 
 	dst := make([]byte, blockCnt*aes.BlockSize) // зашифровываем
-	// for i := 0; i < blockCnt; i++ {
 	for i := range blockCnt {
 		currSrc := src[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		currDst := dst[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		aesblock.Encrypt(currDst, currSrc)
 	}
 
-	// dst := make([]byte, len(src))
-	// aesblock.Encrypt(dst, src)
 	return dst, nil
 }
 
@@ -53,7 +50,7 @@ func decryptFix(key []byte, src []byte) ([]byte, error) {
 	srcLen := len(src)
 
 	dst := make([]byte, srcLen)
-	for i := 0; i < srcLen/aes.BlockSize; i++ {
+	for i := range srcLen / aes.BlockSize {
 		currSrc := src[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		currDst := dst[i*aes.BlockSize : (i+1)*aes.BlockSize]
 		aesblock.Decrypt(currDst, currSrc)

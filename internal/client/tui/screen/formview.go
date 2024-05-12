@@ -115,17 +115,17 @@ func (m *FormView) View() string {
 		top += m.viewportHeaderView()
 
 		footer := m.viewportFooterView()
-		free := m.state.F.FreeSpace(top+footer, "")
+		free := m.state.F.FreeSpace(top+"\n\n"+footer, "")
 
-		m.viewport.Height = free - 1
+		m.viewport.Height = free
 		m.viewport.YPosition = lipgloss.Height(top)
-		return m.state.F.Render(top+"\n"+m.viewport.View()+"\n"+footer, "\nctrl+c/q quit • ← back")
+		return m.state.F.Render(top+"\n"+m.viewport.View()+"\n"+footer, "ctrl+c/q quit • ← back")
 	}
 	return m.state.F.Render(top, "ctrl+c/q quit • ← back")
 }
 
 func (m *FormView) viewportHeaderView() string {
-	title := m.vpTitleStyle("Mr. Pager")
+	title := m.vpTitleStyle(m.d.TextName)
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }

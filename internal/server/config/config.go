@@ -40,7 +40,7 @@ type (
 	}
 	// Log - logger configuration.
 	Log struct {
-		Level string `default:"" flg:"log" flgU:"Log level" env:"LOG_LEVEL"`
+		Level string `default:"debug" flg:"log" flgU:"Log level" env:"LOG_LEVEL"`
 	}
 )
 

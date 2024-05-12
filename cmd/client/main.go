@@ -9,7 +9,7 @@ import (
 
 	"github.com/maybecoding/keep-it-safe/internal/client/config"
 
-	client "github.com/maybecoding/keep-it-safe/internal/client/api/v1"
+	client "github.com/maybecoding/keep-it-safe/generated/client"
 )
 
 var (
