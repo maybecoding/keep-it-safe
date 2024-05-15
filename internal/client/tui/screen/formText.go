@@ -11,8 +11,8 @@ import (
 type FormText struct {
 	state       *state.State
 	name        string
-	modelBack   *tea.Model
-	modelSubmit *tea.Model
+	modelBack   tea.Model
+	modelSubmit tea.Model
 	callback    func([]string) tea.Cmd
 
 	textarea   textarea.Model
@@ -24,8 +24,8 @@ type FormText struct {
 func NewFormText(st *state.State,
 	name,
 	placeholder string,
-	modelBack *tea.Model,
-	modelSubmit *tea.Model,
+	modelBack tea.Model,
+	modelSubmit tea.Model,
 	callback func([]string) tea.Cmd,
 ) *FormText {
 	input := textinput.New()
@@ -70,7 +70,7 @@ func (m *FormText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyLeft:
 			if m.FocusSubmit() {
-				return *m.modelBack, nil
+				return m.modelBack, nil
 			}
 		case tea.KeyTab:
 			switch {
@@ -83,17 +83,16 @@ func (m *FormText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, m.input.Focus())
 			}
 			m.FocusNext()
-
 		case tea.KeyEnter:
 			if m.FocusSubmit() && m.input.Value() != "" && m.textarea.Value() != "" {
 				if m.callback == nil {
-					return *m.modelSubmit, m.Fields
+					return m.modelSubmit, m.Fields
 				}
-				return *m.modelSubmit, m.callback(m.FieldsStr())
+				return m.modelSubmit, m.callback(m.FieldsStr())
 			}
-
 		case tea.KeyCtrlC:
 			return m, tea.Quit
+		default:
 		}
 	case tea.WindowSizeMsg:
 		m.state.F.WinSize(msg)
@@ -121,7 +120,7 @@ func (m *FormText) View() string {
 
 	top += "\n\n" + m.input.View() + "\n\n"
 
-	submit := "Submit"
+	submit := submitText
 	if m.FocusSubmit() {
 		submit = focusedStyle.Copy().Render("[" + submit + "]")
 	}
@@ -148,7 +147,8 @@ func (m *FormText) FocusText() bool {
 
 // FocusSubmit - is focus on submit button.
 func (m *FormText) FocusSubmit() bool {
-	return m.focusIndex == 2
+	const focusSubmit = 2
+	return m.focusIndex == focusSubmit
 }
 
 // FocusNext - focus to next element.

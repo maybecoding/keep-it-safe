@@ -41,7 +41,7 @@ func NewFormView(st *state.State) *FormView {
 // FormViewInit struct with initialization for screen FormView.
 type FormViewInit struct {
 	Name       string
-	ModelBack  *tea.Model
+	ModelBack  tea.Model
 	TextName   string
 	Text       string
 	Components []FormViewComponent
@@ -71,11 +71,11 @@ func (m *FormView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case s == "ctrl+c" || s == "q" || s == "esc":
+		case s == tea.KeyCtrlC.String() || s == "q" || s == tea.KeyEsc.String():
 			return m, tea.Quit
 
 		case s == tea.KeyLeft.String() && m.d != nil:
-			return *m.d.ModelBack, nil
+			return m.d.ModelBack, nil
 		}
 
 	case FormViewInit:
@@ -131,7 +131,8 @@ func (m *FormView) viewportHeaderView() string {
 }
 
 func (m *FormView) viewportFooterView() string {
-	info := m.vpInfoStyle(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
+	const wFullPrc = 100
+	info := m.vpInfoStyle(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*wFullPrc))
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }

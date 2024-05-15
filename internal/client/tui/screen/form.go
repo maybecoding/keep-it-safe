@@ -11,25 +11,25 @@ import (
 // Form screen for form fields.
 type Form struct {
 	name        string
-	modelBack   *tea.Model
-	modelSubmit *tea.Model
+	modelBack   tea.Model
+	modelSubmit tea.Model
 	callback    func([]string) tea.Cmd
 	state       *state.State
 
-	inputs     []textinput.Model
+	inputs     []*textinput.Model
 	focusIndex int
 }
 
 // NewForm creates form with fields.
 func NewForm(st *state.State,
 	name string,
-	modelBack *tea.Model,
-	modelSubmit *tea.Model,
+	modelBack tea.Model,
+	modelSubmit tea.Model,
 	ips []InputParam,
 	callback func([]string) tea.Cmd,
 ) *Form {
 	// prepare inputs
-	inputs := make([]textinput.Model, 0, len(ips))
+	inputs := make([]*textinput.Model, 0, len(ips))
 	for i, ip := range ips {
 		ti := textinput.New()
 		ti.Placeholder = ip.Placeholder
@@ -42,7 +42,7 @@ func NewForm(st *state.State,
 			ti.PromptStyle = focusedStyle
 			ti.TextStyle = focusedStyle
 		}
-		inputs = append(inputs, ti)
+		inputs = append(inputs, &ti)
 	}
 
 	return &Form{state: st, name: name, inputs: inputs, callback: callback, modelBack: modelBack, modelSubmit: modelSubmit}
@@ -68,27 +68,31 @@ func (m *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case s == tea.KeyLeft.String() && m.focusIndex == len(m.inputs) || s == tea.KeyCtrlLeft.String() && m.focusIndex < len(m.inputs):
-			return *m.modelBack, nil
+		case s == tea.KeyLeft.String() && m.submitFocused() || s == tea.KeyCtrlLeft.String() && !m.submitFocused():
+			return m.modelBack, nil
 
-		case s == "ctrl+c" || s == "esc":
+		case s == tea.KeyCtrlC.String() || s == tea.KeyEsc.String():
 			return m, tea.Quit
 
 			// Set focus to next input
-		case s == "tab" || s == "shift+tab" || s == "enter" || s == "up" || s == "down":
+		case s == tea.KeyTab.String() ||
+			s == tea.KeyShiftTab.String() ||
+			s == tea.KeyEnter.String() ||
+			s == tea.KeyUp.String() ||
+			s == tea.KeyDown.String():
 			s := msg.String()
 
 			// Did the user press enter while the submit button was focused?
 			// If so, Form.
-			if s == "enter" && m.focusIndex == len(m.inputs) {
+			if s == tea.KeyEnter.String() && m.submitFocused() {
 				if m.callback == nil {
-					return *m.modelSubmit, m.Fields
+					return m.modelSubmit, m.Fields
 				}
-				return *m.modelSubmit, m.callback(m.FieldsStr())
+				return m.modelSubmit, m.callback(m.FieldsStr())
 			}
 
 			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
+			if s == tea.KeyUp.String() || s == tea.KeyShiftTab.String() {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
@@ -130,7 +134,8 @@ func (m *Form) updateInputs(msg tea.Msg) tea.Cmd {
 	// Only text inputs with Focus() set will respond, so it's safe to simply
 	// update all of them here without any further logic.
 	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+		inp, cmd := m.inputs[i].Update(msg)
+		m.inputs[i], cmds[i] = &inp, cmd
 	}
 
 	return tea.Batch(cmds...)
@@ -146,14 +151,14 @@ func (m *Form) View() string {
 		view += m.inputs[i].View() + "\n"
 	}
 
-	submit := "Submit"
-	if m.focusIndex == len(m.inputs) {
+	submit := submitText
+	if m.submitFocused() {
 		submit = focusedStyle.Render("[" + submit + "]")
 	}
 	view += "\n" + submit + "\n"
 
-	backKey := "←"
-	if m.focusIndex < len(m.inputs) {
+	backKey := leftText
+	if !m.submitFocused() {
 		backKey = "Ctrl + " + backKey
 	}
 
@@ -176,4 +181,8 @@ func (m *Form) FieldsStr() []string {
 		ff = append(ff, input.Value())
 	}
 	return ff
+}
+
+func (m *Form) submitFocused() bool {
+	return m.focusIndex == len(m.inputs)
 }

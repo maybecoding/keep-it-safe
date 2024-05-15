@@ -14,6 +14,8 @@ var (
 	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+	submitText   = "Submit"
+	leftText     = "←"
 )
 
 // ActionResult type for transfer result of action.
@@ -67,7 +69,7 @@ func NewWelcome(st *state.State, buildVersion, buildTime string) *Welcome {
 			key.WithHelp("?", "toggle help"),
 		),
 		Quit: key.NewBinding(
-			key.WithKeys("esc", "q", "ctrl+c"),
+			key.WithKeys(tea.KeyEsc.String(), "q", tea.KeyCtrlC.String()),
 			key.WithHelp("esc/q", "quit"),
 		),
 	}
@@ -87,9 +89,9 @@ func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.keys.Register):
-			return *m.state.Register, (*m.state.Register).Init()
+			return m.state.Register, m.state.Register.Init()
 		case key.Matches(msg, m.keys.Login):
-			return *m.state.Login, (*m.state.Login).Init()
+			return m.state.Login, m.state.Login.Init()
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Quit):
@@ -97,7 +99,7 @@ func (m *Welcome) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	// if registration or login successful
 	case ActionResult:
-		return *m.state.Secrets, nil
+		return m.state.Secrets, nil
 	case tea.WindowSizeMsg:
 		m.state.F.WinSize(msg)
 	}

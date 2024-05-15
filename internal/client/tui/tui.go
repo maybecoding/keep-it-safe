@@ -16,33 +16,22 @@ import (
 
 func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {
 	s := &state.State{C: c, F: frame.New().MarginSet(1, 2)}
-	s.Welcome = new(tea.Model)
-	s.Register = new(tea.Model)
-	s.Login = new(tea.Model)
-	s.Secrets = new(tea.Model)
-	s.SecretChoose = new(tea.Model)
-	s.FormView = new(tea.Model)
-
-	s.SecretAdd.Credential = new(tea.Model)
-	s.SecretAdd.Text = new(tea.Model)
-	s.SecretAdd.Binary = new(tea.Model)
-	s.SecretAdd.BankCard = new(tea.Model)
 
 	var secretAddInitCmd tea.Cmd = func() tea.Msg {
 		return screen.SecretChooseInit{
 			Back:        s.Secrets,
-			SecretTypes: []*tea.Model{s.SecretAdd.Credential, s.SecretAdd.Text, s.SecretAdd.Binary, s.SecretAdd.BankCard},
+			SecretTypes: []tea.Model{s.SecretAdd.Credential, s.SecretAdd.Text, s.SecretAdd.Binary, s.SecretAdd.BankCard},
 		}
 	}
 
-	*s.Welcome = screen.NewWelcome(s, buildVersion, buildTime)
-	*s.Register = screen.NewRegister(s)
-	*s.Login = screen.NewLogin(s)
-	*s.Secrets = screen.NewSecrets(s, secretAddInitCmd)
-	*s.SecretChoose = screen.NewSecretChoose(s)
-	*s.FormView = screen.NewFormView(s)
+	s.Welcome = screen.NewWelcome(s, buildVersion, buildTime)
+	s.Register = screen.NewRegister(s)
+	s.Login = screen.NewLogin(s)
+	s.Secrets = screen.NewSecrets(s, secretAddInitCmd)
+	s.SecretChoose = screen.NewSecretChoose(s)
+	s.FormView = screen.NewFormView(s)
 
-	*s.SecretAdd.Credential = screen.NewForm(s,
+	s.SecretAdd.Credential = screen.NewForm(s,
 		"Add credentials",
 		s.Secrets,
 		s.Secrets,
@@ -59,8 +48,8 @@ func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {
 		},
 	)
 
-	*s.SecretAdd.Text = screen.NewSecretAddText(s)
-	*s.SecretAdd.Binary = screen.NewFormText(s,
+	s.SecretAdd.Text = screen.NewSecretAddText(s)
+	s.SecretAdd.Binary = screen.NewFormText(s,
 		"Add Binary Data",
 		"Use Hex symbols for writing binary data.",
 		s.Secrets,
@@ -79,7 +68,7 @@ func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {
 		},
 	)
 
-	*s.SecretAdd.BankCard = screen.NewForm(s,
+	s.SecretAdd.BankCard = screen.NewForm(s,
 		"Add bank card",
 		s.Secrets,
 		s.Secrets,
@@ -98,7 +87,7 @@ func Run(c *client.ClientWithResponses, buildVersion, buildTime string) error {
 		},
 	)
 
-	p := tea.NewProgram(*s.Welcome)
+	p := tea.NewProgram(s.Welcome)
 	// p := tea.NewProgram(screen.NewForm(s, ), tea.WithAltScreen())
 	_, err := p.Run()
 	if err != nil {

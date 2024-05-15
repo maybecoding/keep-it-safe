@@ -11,18 +11,18 @@ type State struct {
 	F     *frame.Frame
 	Token string
 
-	Welcome      *tea.Model
-	Register     *tea.Model
-	Login        *tea.Model
-	Secrets      *tea.Model
-	SecretChoose *tea.Model
+	Welcome      tea.Model
+	Register     tea.Model
+	Login        tea.Model
+	Secrets      tea.Model
+	SecretChoose tea.Model
 	SecretAdd    SecretTypes
-	FormView     *tea.Model
+	FormView     tea.Model
 }
 
 type SecretTypes struct {
-	Credential *tea.Model
-	Text       *tea.Model
-	Binary     *tea.Model
-	BankCard   *tea.Model
+	Credential tea.Model
+	Text       tea.Model
+	Binary     tea.Model
+	BankCard   tea.Model
 }

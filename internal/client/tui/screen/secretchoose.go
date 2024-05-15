@@ -27,8 +27,8 @@ type SecretChoose struct {
 	keys  *secretChooseKeyMap
 	help  help.Model
 
-	modelBack        *tea.Model
-	modelsSecretType []*tea.Model
+	modelBack        tea.Model
+	modelsSecretType []tea.Model
 	secretTypesLen   int
 	focusIndex       int
 }
@@ -37,10 +37,10 @@ func NewSecretChoose(st *state.State) *SecretChoose {
 	keyMap := secretChooseKeyMap{
 		Back: key.NewBinding(
 			key.WithKeys(tea.KeyLeft.String()),
-			key.WithHelp("←", "back"),
+			key.WithHelp(leftText, "back"),
 		),
 		Quit: key.NewBinding(
-			key.WithKeys("esc", "q", "ctrl+c"),
+			key.WithKeys(tea.KeyEsc.String(), "q", tea.KeyCtrlC.String()),
 			key.WithHelp("esc/q", "quit"),
 		),
 	}
@@ -66,23 +66,23 @@ func (m *SecretChoose) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s := msg.String()
 		switch {
 		case key.Matches(msg, m.keys.Back):
-			return *m.state.Welcome, nil
+			return m.state.Welcome, nil
 
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 
 		// if back
 		case s == tea.KeyLeft.String():
-			return *m.modelBack, nil
+			return m.modelBack, nil
 		// if choosed secret type
-		case s == "enter":
+		case s == tea.KeyEnter.String():
 			nxt := m.modelsSecretType[m.focusIndex]
-			return *nxt, (*nxt).Init()
+			return nxt, nxt.Init()
 
 			// Set focus to next input
-		case s == "tab" || s == "shift+tab" || s == "up" || s == "down":
+		case s == tea.KeyTab.String() || s == tea.KeyShiftTab.String() || s == tea.KeyUp.String() || s == tea.KeyDown.String():
 			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
+			if s == tea.KeyUp.String() || s == tea.KeyShiftTab.String() {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
@@ -122,6 +122,6 @@ func (m *SecretChoose) View() string {
 }
 
 type SecretChooseInit struct {
-	Back        *tea.Model
-	SecretTypes []*tea.Model
+	Back        tea.Model
+	SecretTypes []tea.Model
 }

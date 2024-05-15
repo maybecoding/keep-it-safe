@@ -9,30 +9,13 @@ import (
 	"github.com/maybecoding/keep-it-safe/generated/models"
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type registerKeyMap struct {
-	Back key.Binding
-	Quit key.Binding
-}
-
-func (k *registerKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Back, k.Quit}
-}
-
-func (k *registerKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Back}, {k.Quit}}
-}
-
 // Register struct for registration form.
 type Register struct {
 	state *state.State
-	keys  *registerKeyMap
-	help  help.Model
 
 	buttonFocused string
 	buttonBlurred string
@@ -43,19 +26,6 @@ type Register struct {
 
 // NewRegister returns registration form.
 func NewRegister(st *state.State) *Register {
-	keyMap := registerKeyMap{
-		Back: key.NewBinding(
-			key.WithKeys(tea.KeyLeft.String()),
-			key.WithHelp("←", "back"),
-		),
-		Quit: key.NewBinding(
-			key.WithKeys("esc", "ctrl+c"),
-			key.WithHelp("esc", "quit"),
-		),
-	}
-	hlp := help.New()
-
-	// prepare inputs
 	const inputCount = 2
 	inputs := make([]textinput.Model, inputCount)
 	var t textinput.Model
@@ -78,9 +48,9 @@ func NewRegister(st *state.State) *Register {
 		inputs[i] = t
 	}
 
-	buttonFocused := focusedStyle.Copy().Render("[ Submit ]")
-	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	return &Register{state: st, keys: &keyMap, help: hlp, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
+	buttonFocused := focusedStyle.Copy().Render("[ " + submitText + " ]")
+	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render(submitText))
+	return &Register{state: st, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
 }
 
 var _ tea.Model = (*Register)(nil)
@@ -94,24 +64,25 @@ func (m *Register) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case key.Matches(msg, m.keys.Back):
-			return *m.state.Welcome, nil
+		case s == tea.KeyLeft.String():
+			return m.state.Welcome, nil
 
-		case key.Matches(msg, m.keys.Quit):
+		case s == tea.KeyEsc.String() || s == tea.KeyCtrlC.String():
 			return m, tea.Quit
 
 			// Set focus to next input
-		case s == "tab" || s == "shift+tab" || s == "enter" || s == "up" || s == "down":
+		case s == tea.KeyTab.String() || s == tea.KeyShiftTab.String() ||
+			s == tea.KeyEnter.String() || s == tea.KeyUp.String() || s == tea.KeyDown.String():
 			s := msg.String()
 
 			// Did the user press enter while the submit button was focused?
 			// If so, register.
-			if s == "enter" && m.focusIndex == len(m.inputs) {
+			if s == tea.KeyEnter.String() && m.focusIndex == len(m.inputs) {
 				return m, m.Register
 			}
 
 			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
+			if s == tea.KeyUp.String() || s == tea.KeyShiftTab.String() {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
@@ -140,7 +111,7 @@ func (m *Register) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case ActionResult:
 		if msg.Result == "" {
-			return *m.state.Welcome, func() tea.Msg { return msg }
+			return m.state.Welcome, func() tea.Msg { return msg }
 		}
 		m.errorMessage = msg.Result
 	case tea.WindowSizeMsg:
@@ -187,10 +158,10 @@ func (m *Register) View() string {
 		view += errorStyle.Copy().Render(m.errorMessage) + "\n"
 	}
 
-	return m.state.F.Render(view, m.help.View(m.keys))
+	return m.state.F.Render(view, "← back • esc quit")
 }
 
-func (m Register) Register() tea.Msg {
+func (m *Register) Register() tea.Msg {
 	resp, err := m.state.C.RegisterWithResponse(context.Background(), models.Credential{Login: m.inputs[0].Value(), Password: m.inputs[1].Value()})
 	if err != nil {
 		return ActionResult{Result: err.Error()}

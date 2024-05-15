@@ -10,57 +10,37 @@ import (
 	"github.com/maybecoding/keep-it-safe/internal/client/tui/state"
 	"github.com/maybecoding/keep-it-safe/pkg/logger"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type loginKeyMap struct {
-	Back key.Binding
-	Quit key.Binding
-}
-
-// ShortHelp returns short help for help component.
-func (k loginKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Back, k.Quit}
-}
-
-// FullHelp returns short help for help component.
-func (k loginKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Back}, {k.Quit}}
-}
-
 // Login struct for login form.
 type Login struct {
 	state *state.State
-	keys  loginKeyMap
-	help  help.Model
-
-	inputs     []textinput.Model
-	focusIndex int
 
 	buttonFocused string
 	buttonBlurred string
 	errorMessage  string
+	inputs        []textinput.Model
+	focusIndex    int
 }
 
 // NewLogin returns new login form.
-func NewLogin(state *state.State) *Login {
-	keyMap := loginKeyMap{
-		Back: key.NewBinding(
-			key.WithKeys(tea.KeyLeft.String()),
-			key.WithHelp("←", "back"),
-		),
-		Quit: key.NewBinding(
-			key.WithKeys("esc", "ctrl+c"),
-			key.WithHelp("esc", "quit"),
-		),
-	}
-	hlp := help.New()
+func NewLogin(st *state.State) *Login {
+	// keyMap := loginKeyMap{
+	// 	Back: key.NewBinding(
+	// 		key.WithKeys(tea.KeyLeft.String()),
+	// 		key.WithHelp(leftText, "back"),
+	// 	),
+	// 	Quit: key.NewBinding(
+	// 		key.WithKeys(tea.KeyEsc.String(), tea.KeyCtrlC.String()),
+	// 		key.WithHelp(tea.KeyEsc.String(), "quit"),
+	// 	),
+	// }
 
 	// prepare inputs
-	inputs := make([]textinput.Model, 2)
+	const loginInpCnt = 2
+	inputs := make([]textinput.Model, loginInpCnt)
 	var t textinput.Model
 	for i := range inputs {
 		t = textinput.New()
@@ -81,9 +61,9 @@ func NewLogin(state *state.State) *Login {
 		inputs[i] = t
 	}
 
-	buttonFocused := focusedStyle.Copy().Render("[ Submit ]")
-	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-	return &Login{state: state, keys: keyMap, help: hlp, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
+	buttonFocused := focusedStyle.Copy().Render("[ " + submitText + " ]")
+	buttonBlurred := fmt.Sprintf("[ %s ]", blurredStyle.Render(submitText))
+	return &Login{state: st, inputs: inputs, buttonFocused: buttonFocused, buttonBlurred: buttonBlurred}
 }
 
 var _ tea.Model = (*Login)(nil)
@@ -99,24 +79,21 @@ func (m *Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		s := msg.String()
 		switch {
-		case key.Matches(msg, m.keys.Back):
-			return *m.state.Welcome, nil
+		case s == tea.KeyLeft.String():
+			return m.state.Welcome, nil
 
-		case key.Matches(msg, m.keys.Quit):
+		case s == tea.KeyEsc.String() || s == tea.KeyCtrlC.String():
 			return m, tea.Quit
 
-			// Set focus to next input
-		case s == "tab" || s == "shift+tab" || s == "enter" || s == "up" || s == "down":
+		case s == tea.KeyTab.String() || s == tea.KeyShiftTab.String() ||
+			s == tea.KeyEnter.String() || s == tea.KeyUp.String() || s == tea.KeyDown.String():
 			s := msg.String()
 
-			// Did the user press enter while the submit button was focused?
-			// If so, Login.
-			if s == "enter" && m.focusIndex == len(m.inputs) {
+			if s == tea.KeyEnter.String() && m.focusIndex == len(m.inputs) {
 				return m, m.Login
 			}
 
-			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
+			if s == tea.KeyUp.String() || s == tea.KeyShiftTab.String() {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
@@ -145,7 +122,7 @@ func (m *Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case ActionResult:
 		if msg.Result == "" {
-			return *m.state.Secrets, (*m.state.Secrets).Init() // nil // func() tea.Msg { return msg }
+			return m.state.Secrets, (m.state.Secrets).Init() // nil // func() tea.Msg { return msg }
 		}
 		m.errorMessage = msg.Result
 	case tea.WindowSizeMsg:
@@ -193,7 +170,7 @@ func (m *Login) View() string {
 		view += errorStyle.Copy().Render(m.errorMessage) + "\n"
 	}
 
-	return m.state.F.Render(view, m.help.View(m.keys))
+	return m.state.F.Render(view, "← back • esc quit")
 }
 
 // Login login on server.

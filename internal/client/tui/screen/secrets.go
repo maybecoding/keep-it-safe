@@ -66,7 +66,7 @@ func newListKeyMap() *secretsKeyMap {
 			key.WithHelp("a", "add item"),
 		),
 		itemView: key.NewBinding(
-			key.WithKeys("v", "enter"),
+			key.WithKeys("v", tea.KeyEnter.String()),
 			key.WithHelp("v/enter", "view"),
 		),
 	}
@@ -77,9 +77,9 @@ type item struct {
 	models.Secret
 }
 
-func (i item) Title() string       { return i.Secret.Name }
-func (i item) Description() string { return secretTypeName(i.Secret.Type) }
-func (i item) FilterValue() string { return i.Secret.Name }
+func (i *item) Title() string       { return i.Secret.Name }
+func (i *item) Description() string { return secretTypeName(i.Secret.Type) }
+func (i *item) FilterValue() string { return i.Secret.Name }
 
 const (
 	SecretTypeCredentials int32 = iota
@@ -90,13 +90,13 @@ const (
 
 func secretTypeName(st int32) string {
 	switch st {
-	case 0:
+	case SecretTypeCredentials:
 		return "Credentials"
-	case 1:
+	case SecretTypeText:
 		return "Text"
-	case 2:
+	case SecretTypeBinary:
 		return "Binary"
-	case 3:
+	case SecretTypeBankCard:
 		return "BankCard"
 	default:
 		return "Undefined"
@@ -115,7 +115,7 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	var secret *models.Secret
-	if i, ok := m.list.SelectedItem().(item); ok {
+	if i, ok := m.list.SelectedItem().(*item); ok {
 		secret = &i.Secret
 	} else {
 		secret = nil
@@ -126,14 +126,14 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.list.FilterState() == list.Filtering {
 			break
 		}
-		if msg.String() == "ctrl+c" {
+		if msg.String() == tea.KeyCtrlC.String() {
 			return m, tea.Quit
 		}
 		switch {
 		case key.Matches(msg, m.keys.reload):
 			cmds = append(cmds, m.Reload)
 		case key.Matches(msg, m.keys.itemAdd):
-			return *m.state.SecretChoose, m.addInitCmd
+			return m.state.SecretChoose, m.addInitCmd
 		case key.Matches(msg, m.keys.itemView) && secret != nil:
 			cmds = append(cmds, m.ItemView(secret))
 		}
@@ -153,7 +153,7 @@ func (m *Secrets) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, msg.Cmd)
 		}
 	case FormViewInit:
-		return *m.state.FormView, func() tea.Msg { return msg }
+		return m.state.FormView, func() tea.Msg { return msg }
 
 	// if got data add secret
 	case models.Data:
@@ -186,7 +186,7 @@ func (m *Secrets) Reload() tea.Msg {
 		if resp != nil && resp.JSON200 != nil {
 			items := make([]list.Item, 0, len(*resp.JSON200))
 			for _, s := range *resp.JSON200 {
-				items = append(items, item{s})
+				items = append(items, &item{s})
 			}
 			ar.Cmd = m.list.SetItems(items)
 			ar.Result = fmt.Sprintf("Loaded %d items", len(items))

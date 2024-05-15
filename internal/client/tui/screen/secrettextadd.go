@@ -12,12 +12,12 @@ import (
 
 type SecretAddText struct {
 	state      *state.State
-	name       textinput.Model
 	textarea   textarea.Model
+	name       textinput.Model
 	focusIndex int
 }
 
-// NewSecretAddText creates screen for input long text
+// NewSecretAddText creates screen for input long text.
 func NewSecretAddText(st *state.State) *SecretAddText {
 	name := textinput.New()
 	name.Placeholder = "Name"
@@ -53,12 +53,13 @@ func (m *SecretAddText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyTab:
-			if m.FocusName() {
+			switch {
+			case m.FocusName():
 				m.name.Blur()
 				cmds = append(cmds, m.textarea.Focus())
-			} else if m.FocusText() {
+			case m.FocusText():
 				m.textarea.Blur()
-			} else {
+			default:
 				cmds = append(cmds, m.name.Focus())
 			}
 			m.FocusNext()
@@ -71,15 +72,17 @@ func (m *SecretAddText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SecretType: SecretTypeText,
 					Text:       &text,
 				})
-				return *m.state.Secrets, data
+				return m.state.Secrets, data
 			}
 
 		case tea.KeyCtrlC:
 			return m, tea.Quit
+		default:
 		}
 	case tea.WindowSizeMsg:
+		const padding = 10
 		m.state.F.WinSize(msg)
-		m.textarea.SetHeight(m.state.F.Height() - 10)
+		m.textarea.SetHeight(m.state.F.Height() - padding)
 		m.textarea.SetWidth(m.state.F.Width())
 	}
 
@@ -97,7 +100,7 @@ func (m *SecretAddText) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View for TUI model.
 func (m *SecretAddText) View() string {
 	view := ""
-	submit := "Submit"
+	submit := submitText
 	if m.FocusSubmit() {
 		submit = focusedStyle.Copy().Render("[" + submit + "]")
 	}
