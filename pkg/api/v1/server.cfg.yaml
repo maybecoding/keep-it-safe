@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/deepmap/oapi-codegen/HEAD/configuration-schema.json
+package: server
+generate:
+  std-http-server: true
+  embedded-spec: true
+  strict-server: true
+  models: false
+additional-imports:
+  - package: github.com/maybecoding/keep-it-safe/generated/models
+    alias: .
+output: ./generated/server/server.gen.go

@@ -1,0 +1,298 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Make IT Safe API
+# servers:
+#   - url: https://localhost/api
+paths:
+  /register:
+    post:
+      summary: Register new user
+      description: Register new user
+      operationId: register
+      requestBody:
+        description: crentials of user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credential"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: Session cookie with JWT token
+              schema:
+                type: string
+                example: Authorization=Bearer <jwt_token>; Path=/; HttpOnly
+        "400":
+          description: Bad request
+        "409":
+          description: User already exists
+        "500":
+          description: Internal server error
+  /login:
+    post:
+      summary: Login user
+      description: "Login existing user"
+      operationId: login
+      requestBody:
+        description: crentials of user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credential"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: Session cookie with JWT token
+              schema:
+                type: string
+                example: Authorization=Bearer <jwt_token>; Path=/; HttpOnly
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /secrets:
+    get:
+      summary: Get list of secrets of user
+      description: Get list of secrets of user
+      operationId: secretList
+      parameters:
+        - in: cookie
+          name: Authorization
+          description: JWT bearer of user
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Secrets"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Creates new secret of user
+      description: Creates new secret of user
+      operationId: secretSet
+      parameters:
+        - in: cookie
+          name: Authorization
+          description: JWT bearer of user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Secret data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Data"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /secrets/{secret_id}:
+    get:
+      summary: Get secret by id
+      description: Get secret by id
+      operationId: secretGetByID
+      parameters:
+        - name: secret_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: cookie
+          name: Authorization
+          description: JWT bearer of user
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Data"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    # base types
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+    Credential:
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          description: user login
+          example: "JohnDoe"
+        password:
+          type: string
+          example: "password"
+    Secret:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        user_id:
+          type: integer
+          format: int32
+        type:
+          type: integer
+          format: int32
+        name:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+      required:
+        - id
+        - user_id
+        - type
+        - name
+        - created
+        - updated
+    Secrets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Secret"
+    DataCredentials:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+      required:
+        - login
+        - password
+    DataText:
+      type: string
+    DataBinary:
+      type: string
+      format: byte
+    DataBankCard:
+      type: object
+      properties:
+        number:
+          type: string
+        valid:
+          type: string
+        holder:
+          type: string
+        validation_code:
+          type: string
+      required:
+        - number
+        - valid
+        - holder
+        - validation_code
+    SecretAttr:
+      type: object
+      properties:
+        attr:
+          type: string
+        value:
+          type: string
+      required:
+        - attr
+        - value
+    Data:
+      type: object
+      properties:
+        secret_name:
+          type: string
+        secret_meta:
+          type: array
+          items:
+            $ref: "#/components/schemas/SecretAttr"
+        secret_type:
+          type: integer
+          format: int32
+        credentials:
+          $ref: "#/components/schemas/DataCredentials"
+        text:
+          $ref: "#/components/schemas/DataText"
+        binary:
+          $ref: "#/components/schemas/DataBinary"
+        bank_card:
+          $ref: "#/components/schemas/DataBankCard"
+      required:
+        - secret_name
+        - secret_type
+  # securitySchemes:
+  #   BearerAuth:
+  #     type: http
+  #     scheme: bearer
+  #     bearerFormat: JWT
+# security:
+#   - BearerAuth: []
